@@ -2,8 +2,6 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
-//require_once __DIR__ . '/../../../../../vendor/lizards-and-pumpkins/catalog/tests/Unit/Suites/DataPool/SearchEngine/AbstractSearchEngineTest.php';
-
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\WebsiteContextDecorator;
