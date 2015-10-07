@@ -59,6 +59,19 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
     }
 
     /**
+     * @param ProductId $productId
+     * @param string[] $searchDocumentFields
+     * @return SearchDocument
+     */
+    private function createSearchDocument(ProductId $productId, array $searchDocumentFields)
+    {
+        $searchDocumentFieldsCollection = SearchDocumentFieldCollection::fromArray($searchDocumentFields);
+        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
+
+        return new SearchDocument($searchDocumentFieldsCollection, $context, $productId);
+    }
+
+    /**
      * @return SearchEngine
      */
     protected function createSearchEngineInstance()
@@ -83,14 +96,12 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
     {
         $searchEngine = $this->createSearchEngineInstance();
-        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
 
         $productId = ProductId::fromString(uniqid());
         $fieldName = 'price';
         $fieldValue = 'foo';
 
-        $searchDocumentFieldsCollection = SearchDocumentFieldCollection::fromArray([$fieldName => $fieldValue]);
-        $searchDocument = new SearchDocument($searchDocumentFieldsCollection, $context, $productId);
+        $searchDocument = $this->createSearchDocument($productId, [$fieldName => $fieldValue]);
         $searchDocumentCollection = new SearchDocumentCollection($searchDocument);
 
         $expectedExceptionMessage = sprintf(
@@ -102,7 +113,6 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         );
 
         $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
-
         $searchEngine->addSearchDocumentCollection($searchDocumentCollection);
     }
 }
