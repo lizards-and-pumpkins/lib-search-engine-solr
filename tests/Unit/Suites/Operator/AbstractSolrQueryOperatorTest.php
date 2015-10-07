@@ -31,7 +31,7 @@ abstract class AbstractSolrQueryOperatorTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return SolrQueryOperatorEqual
+     * @return SolrQueryOperator
      */
     abstract protected function getOperatorInstance();
 
