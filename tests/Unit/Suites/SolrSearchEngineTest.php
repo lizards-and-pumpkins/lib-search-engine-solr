@@ -49,7 +49,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $dataVersion = DataVersion::fromVersionString('-1');
         $contextBuilder = new ContextBuilder($dataVersion);
 
-        return $contextBuilder->createContextsFromDataSets([$contextDataSet])[0];
+        return $contextBuilder->createContext($contextDataSet);
     }
 
     /**

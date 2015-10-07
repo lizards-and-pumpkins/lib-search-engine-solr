@@ -12,7 +12,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldC
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
-use LizardsAndPumpkins\DataVersion;
 use LizardsAndPumpkins\Product\ProductId;
 use LizardsAndPumpkins\Utils\Clearable;
 
@@ -49,22 +48,30 @@ class SolrSearchEngine implements SearchEngine, Clearable
     public function addSearchDocumentCollection(SearchDocumentCollection $documentsCollection)
     {
         $rawDocuments = array_reduce($documentsCollection->getDocuments(), function ($carry, SearchDocument $document) {
-            $rawDocumentFields = $this->buildSearchDocumentFieldsXml($document->getFieldsCollection());
-            $rawContextFields = $this->buildContextFieldsXml($document->getContext());
-            $carry .= '<add>
-                           <doc>
-                               <field name="product_id">' . $document->getProductId() . '</field>
-                               ' . $rawDocumentFields . '
-                               ' . $rawContextFields . '
-                           </doc>
-                       </add>';
-            return $carry;
+            return $carry . $this->formatQueryFieldXml($document);
         }, '');
         $rawPost = '<add>' . $rawDocuments . '</add>';
 
         $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
 
-        $this->sendRequest($url, $rawPost);
+        $this->sendRawPostRequest($url, $rawPost);
+    }
+
+    /**
+     * @param SearchDocument $document
+     * @return string
+     */
+    private function formatQueryFieldXml(SearchDocument $document)
+    {
+        $rawDocumentFields = $this->buildSearchDocumentFieldsXml($document->getFieldsCollection());
+        $rawContextFields = $this->buildContextFieldsXml($document->getContext());
+        return '<add>
+                    <doc>
+                        <field name="product_id">' . addslashes($document->getProductId()) . '</field>
+                        ' . $rawDocumentFields . '
+                        ' . $rawContextFields . '
+                    </doc>
+                </add>';
     }
 
     /**
@@ -74,12 +81,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function buildSearchDocumentFieldsXml(SearchDocumentFieldCollection $fieldCollection)
     {
         return array_reduce($fieldCollection->getFields(), function ($carry, SearchDocumentField $field) {
-            $fieldKey = $field->getKey();
-            $carry .= array_reduce($field->getValues(), function ($carry, $fieldValue) use ($fieldKey) {
-                $carry .= sprintf('<field name="%s%s">%s</field>', self::FIELD_PREFIX, $fieldKey, $fieldValue);
-                return $carry;
+            $fieldName = addslashes(self::FIELD_PREFIX . $field->getKey());
+            return $carry . array_reduce($field->getValues(), function ($carry, $fieldValue) use ($fieldName) {
+                return $carry .sprintf('<field name="%s">%s</field>', $fieldName, addslashes($fieldValue));
             }, '');
-            return $carry;
         }, '');
     }
 
@@ -90,9 +95,9 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function buildContextFieldsXml(Context $context)
     {
         return array_reduce($context->getSupportedCodes(), function ($carry, $contextCode) use ($context) {
-            $fieldName = self::CONTEXT_PREFIX . $contextCode;
-            $carry .= sprintf('<field name="%s">%s</field>', $fieldName, $context->getValue($contextCode));
-            return $carry;
+            $fieldName = addslashes(self::CONTEXT_PREFIX . $contextCode);
+            $fieldValue = addslashes($context->getValue($contextCode));
+            return $carry . sprintf('<field name="%s">%s</field>', $fieldName, $fieldValue);
         }, '');
     }
 
@@ -104,7 +109,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     public function query($queryString, Context $context)
     {
         $fieldsQueryString = implode(' OR ', array_map(function ($fieldName) use ($queryString) {
-            return sprintf('%s%s:"%s"', self::FIELD_PREFIX, $fieldName, $queryString);
+            return addslashes(self::FIELD_PREFIX . $fieldName) . ':"' . addslashes($queryString) . '"';
         }, $this->searchableFields));
         $contextQueryString = $this->convertContextIntoQueryString($context);
 
@@ -145,8 +150,9 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function convertContextIntoQueryString(Context $context)
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            $fieldName = self::CONTEXT_PREFIX . $contextCode;
-            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $context->getValue($contextCode));
+            $fieldName = addslashes(self::CONTEXT_PREFIX . $contextCode);
+            $fieldValue = addslashes($context->getValue($contextCode));
+            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
         }, $context->getSupportedCodes()));
     }
 
@@ -174,30 +180,40 @@ class SolrSearchEngine implements SearchEngine, Clearable
             return '(' . implode($glue, $subCriteriaQueries) . ')';
         }
 
-        $fieldName = self::FIELD_PREFIX . $criteria['fieldName'];
+        return $this->createPrimitiveOperationQueryString($criteria);
+    }
+
+    /**
+     * @param string[] $criteria
+     * @return string
+     */
+    private function createPrimitiveOperationQueryString(array $criteria)
+    {
+        $fieldName = addslashes(self::FIELD_PREFIX . $criteria['fieldName']);
+        $fieldValue = addslashes($criteria['fieldValue']);
 
         if ('Equal' === $criteria['operation']) {
-            return sprintf('%s:"%s"', $fieldName, $criteria['fieldValue']);
+            return sprintf('%s:"%s"', $fieldName, $fieldValue);
         }
 
         if ('NotEqual' === $criteria['operation']) {
-            return sprintf('(-%s:"%s" AND *:*)', $fieldName, $criteria['fieldValue']);
+            return sprintf('(-%s:"%s" AND *:*)', $fieldName, $fieldValue);
         }
 
         if ('LessThan' === $criteria['operation']) {
-            return sprintf('(%1$s:[* TO %2$s] AND -%1$s:%2$s)', $fieldName, $criteria['fieldValue']);
+            return sprintf('(%1$s:[* TO %2$s] AND -%1$s:%2$s)', $fieldName, $fieldValue);
         }
 
         if ('LessOrEqualThan' === $criteria['operation']) {
-            return sprintf('%s:[* TO %s]', $fieldName, $criteria['fieldValue']);
+            return sprintf('%s:[* TO %s]', $fieldName, $fieldValue);
         }
 
         if ('GreaterThan' === $criteria['operation']) {
-            return sprintf('(%1$s:[%2$s TO *] AND -%1$s:%2$s)', $fieldName, $criteria['fieldValue']);
+            return sprintf('(%1$s:[%2$s TO *] AND -%1$s:%2$s)', $fieldName, $fieldValue);
         }
 
         if ('GreaterOrEqualThan' === $criteria['operation']) {
-            return sprintf('%s:[%s TO *]', $fieldName, $criteria['fieldValue']);
+            return sprintf('%s:[%s TO *]', $fieldName, $fieldValue);
         }
 
         throw new UnsupportedSearchCriteriaOperationException(
@@ -211,15 +227,28 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function getSearchDocumentsCollectionMatchingQueryString($queryString)
     {
+        $numberOfRowsToReturn = 10000000;
         $parameters = [
             'q'    => $queryString,
-            'rows' => 10000000
+            'rows' => $numberOfRowsToReturn
         ];
         $url = $this->constructUrl(self::SEARCH_SERVLET, $parameters);
 
         $response = $this->sendRequest($url);
+        $responseDocuments = isset($response['response']) && isset($response['response']['docs']) ?
+            $response['response']['docs'] :
+            [];
 
-        if (!isset($response['response']) || !$response['response']['docs']) {
+        return $this->createSearchDocumentsFromRawResponseDocuments($responseDocuments);
+    }
+
+    /**
+     * @param mixed[] $responseDocuments
+     * @return SearchDocumentCollection
+     */
+    private function createSearchDocumentsFromRawResponseDocuments(array $responseDocuments)
+    {
+        if (empty($responseDocuments)) {
             return new SearchDocumentCollection;
         }
 
@@ -229,7 +258,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
             $productId = ProductId::fromString($document['product_id']);
 
             return new SearchDocument($searchDocumentFieldsCollection, $context, $productId);
-        }, $response['response']['docs']);
+        }, $responseDocuments);
 
         return new SearchDocumentCollection(...$searchDocuments);
     }
@@ -262,21 +291,50 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param string $url
-     * @param string|null $rawPost
-     * @return mixed[]
+     * @return mixed
      */
-    private function sendRequest($url, $rawPost = null)
+    private function sendRequest($url)
     {
-        $ch = curl_init($url);
+        $curlHandle = $this->prepareCurlHandle($url);
+        curl_setopt($curlHandle, CURLOPT_POST, false);
 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, null !== $rawPost);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-type: text/xml']);
-        if (null !== $rawPost) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $rawPost);
-        }
+        return $this->executeCurlRequest($curlHandle);
+    }
 
-        $responseJson = curl_exec($ch);
+    /**
+     * @param string $url
+     * @param string $rawPostFields
+     * @return mixed
+     */
+    private function sendRawPostRequest($url, $rawPostFields)
+    {
+        $curlHandle = $this->prepareCurlHandle($url);
+        curl_setopt($curlHandle, CURLOPT_POST, true);
+        curl_setopt($curlHandle, CURLOPT_POSTFIELDS, $rawPostFields);
+
+        return $this->executeCurlRequest($curlHandle);
+    }
+
+    /**
+     * @param string $url
+     * @return resource
+     */
+    private function prepareCurlHandle($url)
+    {
+        $curlHandle = curl_init($url);
+        curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-type: text/xml']);
+
+        return $curlHandle;
+    }
+
+    /**
+     * @param resource $curlHandle
+     * @return mixed
+     */
+    private function executeCurlRequest($curlHandle)
+    {
+        $responseJson = curl_exec($curlHandle);
         $response = json_decode($responseJson, true);
         $this->validateSolrResponse($responseJson);
 
@@ -290,13 +348,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function createContextFromDocumentData(array $documentData)
     {
         $contextDataSet = $this->extractContextDataSetFromDocumentData($documentData);
-
-        $dataVersion = DataVersion::fromVersionString($contextDataSet['version']);
-        $contextBuilder = new ContextBuilder($dataVersion);
-
-        unset($contextDataSet['version']);
-
-        return $contextBuilder->createContext($contextDataSet);
+        return ContextBuilder::rehydrateContext($contextDataSet);
     }
 
     /**

@@ -17,15 +17,17 @@ spl_autoload_register(function ($class) {
     }
 });
 
-spl_autoload_register(function ($class) {
+$abstractSearchEngineTestLoader = function ($class) {
     $prefix = 'LizardsAndPumpkins\\';
     $len = strlen($prefix);
     if (strncmp($prefix, $class, $len) !== 0) {
         return;
     }
     $relativeClass = substr($class, $len);
-    $file = __DIR__ . '/../../vendor/lizards-and-pumpkins/catalog/tests/Unit/Suites/' . str_replace('\\', '/', $relativeClass) . '.php';
+    $className = str_replace('\\', '/', $relativeClass);
+    $file = __DIR__ . '/../../vendor/lizards-and-pumpkins/catalog/tests/Unit/Suites/' . $className . '.php';
     if (file_exists($file)) {
         require $file;
     }
-});
+};
+spl_autoload_register($abstractSearchEngineTestLoader);
