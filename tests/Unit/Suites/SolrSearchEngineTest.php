@@ -76,7 +76,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
      */
     protected function createSearchEngineInstance()
     {
-        $testSolrConnectionPath = 'http://localhost.loc:8983/solr/';
+        $testSolrConnectionPath = 'http://localhost:8983/solr/';
         $testSearchableAttributes = ['foo', 'baz'];
 
         return new SolrSearchEngine($testSolrConnectionPath, $testSearchableAttributes);
