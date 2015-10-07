@@ -12,6 +12,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldC
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
+use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
 use LizardsAndPumpkins\Product\ProductId;
 use LizardsAndPumpkins\Utils\Clearable;
 
@@ -189,36 +190,20 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function createPrimitiveOperationQueryString(array $criteria)
     {
+        $className = __NAMESPACE__ . '\\Operator\\SolrQueryOperator' . $criteria['operation'];
+
+        if (!class_exists($className)) {
+            throw new UnsupportedSearchCriteriaOperationException(
+                sprintf('Unsupported criterion operation "%s".', $criteria['operation'])
+            );
+        }
+
+        /** @var SolrQueryOperator $operator */
+        $operator = new $className;
         $fieldName = addslashes(self::FIELD_PREFIX . $criteria['fieldName']);
         $fieldValue = addslashes($criteria['fieldValue']);
 
-        if ('Equal' === $criteria['operation']) {
-            return sprintf('%s:"%s"', $fieldName, $fieldValue);
-        }
-
-        if ('NotEqual' === $criteria['operation']) {
-            return sprintf('(-%s:"%s" AND *:*)', $fieldName, $fieldValue);
-        }
-
-        if ('LessThan' === $criteria['operation']) {
-            return sprintf('(%1$s:[* TO %2$s] AND -%1$s:%2$s)', $fieldName, $fieldValue);
-        }
-
-        if ('LessOrEqualThan' === $criteria['operation']) {
-            return sprintf('%s:[* TO %s]', $fieldName, $fieldValue);
-        }
-
-        if ('GreaterThan' === $criteria['operation']) {
-            return sprintf('(%1$s:[%2$s TO *] AND -%1$s:%2$s)', $fieldName, $fieldValue);
-        }
-
-        if ('GreaterOrEqualThan' === $criteria['operation']) {
-            return sprintf('%s:[%s TO *]', $fieldName, $fieldValue);
-        }
-
-        throw new UnsupportedSearchCriteriaOperationException(
-            sprintf('Unsupported criterion operation "%s".', $criteria['operation'])
-        );
+        return $operator->getFormattedQueryString($fieldName, $fieldValue);
     }
 
     /**
