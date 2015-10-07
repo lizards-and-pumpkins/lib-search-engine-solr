@@ -254,24 +254,35 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function createSearchDocumentFieldsCollectionFromDocumentData(array $documentData)
     {
-        $searchDocumentFieldsArray = $this->extractSearchDocumentFieldsFromDocumentData($documentData);
+        $searchDocumentFieldsArray = $this->getSolrDocumentFieldsStartingWith($documentData, self::FIELD_PREFIX);
         return SearchDocumentFieldCollection::fromArray($searchDocumentFieldsArray);
     }
 
     /**
      * @param string[] $documentData
+     * @return Context
+     */
+    private function createContextFromDocumentData(array $documentData)
+    {
+        $contextDataSet = $this->getSolrDocumentFieldsStartingWith($documentData, self::CONTEXT_PREFIX);
+        return ContextBuilder::rehydrateContext($contextDataSet);
+    }
+
+    /**
+     * @param string[] $documentData
+     * @param string $prefix
      * @return string[]
      */
-    private function extractSearchDocumentFieldsFromDocumentData(array $documentData)
+    private function getSolrDocumentFieldsStartingWith(array $documentData, $prefix)
     {
-        $searchDocumentFieldsArray = [];
+        $documentFieldsArray = [];
         foreach ($documentData as $fieldName => $fieldValue) {
-            if (preg_match('/^' . self::FIELD_PREFIX . '(.*)/', $fieldName, $matches)) {
-                $searchDocumentFieldsArray[$matches[1]] = $fieldValue;
+            if (preg_match('/^' . $prefix . '(.*)/', $fieldName, $matches)) {
+                $documentFieldsArray[$matches[1]] = $fieldValue;
             }
         }
 
-        return $searchDocumentFieldsArray;
+        return $documentFieldsArray;
     }
 
     /**
@@ -324,32 +335,6 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $this->validateSolrResponse($responseJson);
 
         return $response;
-    }
-
-    /**
-     * @param string[] $documentData
-     * @return Context
-     */
-    private function createContextFromDocumentData(array $documentData)
-    {
-        $contextDataSet = $this->extractContextDataSetFromDocumentData($documentData);
-        return ContextBuilder::rehydrateContext($contextDataSet);
-    }
-
-    /**
-     * @param string[] $documentData
-     * @return string[]
-     */
-    private function extractContextDataSetFromDocumentData(array $documentData)
-    {
-        $contextDataSource = [];
-        foreach ($documentData as $fieldName => $fieldValue) {
-            if (preg_match('/^' . self::CONTEXT_PREFIX . '(.*)/', $fieldName, $matches)) {
-                $contextDataSource[$matches[1]] = $fieldValue;
-            }
-        }
-
-        return $contextDataSource;
     }
 
     /**
