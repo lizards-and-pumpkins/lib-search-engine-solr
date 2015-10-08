@@ -168,20 +168,28 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function createPrimitiveOperationQueryString(array $criteria)
     {
-        $className = __NAMESPACE__ . '\\Operator\\SolrQueryOperator' . $criteria['operation'];
+        $fieldName = addslashes(self::FIELD_PREFIX . $criteria['fieldName']);
+        $fieldValue = addslashes($criteria['fieldValue']);
+        $operator = $this->getSolrOperator($criteria['operation']);
+
+        return $operator->getFormattedQueryString($fieldName, $fieldValue);
+    }
+
+    /**
+     * @param string $operation
+     * @return SolrQueryOperator
+     */
+    private function getSolrOperator($operation)
+    {
+        $className = __NAMESPACE__ . '\\Operator\\SolrQueryOperator' . $operation;
 
         if (!class_exists($className)) {
             throw new UnsupportedSearchCriteriaOperationException(
-                sprintf('Unsupported criterion operation "%s".', $criteria['operation'])
+                sprintf('Unsupported criterion operation "%s".', $operation)
             );
         }
 
-        /** @var SolrQueryOperator $operator */
-        $operator = new $className;
-        $fieldName = addslashes(self::FIELD_PREFIX . $criteria['fieldName']);
-        $fieldValue = addslashes($criteria['fieldValue']);
-
-        return $operator->getFormattedQueryString($fieldName, $fieldValue);
+        return new $className;
     }
 
     /**
