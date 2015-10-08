@@ -4,6 +4,7 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
+use LizardsAndPumpkins\Context\VersionedContext;
 use LizardsAndPumpkins\Context\WebsiteContextDecorator;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
@@ -11,7 +12,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Stub\UnsupportedStubSearchCriterion;
-use LizardsAndPumpkins\DataVersion;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
@@ -44,15 +44,14 @@ use LizardsAndPumpkins\DataVersion;
 class SolrSearchEngineTest extends AbstractSearchEngineTest
 {
     /**
-     * @param string[] $contextDataSet
      * @return Context
      */
-    private function createContextFromDataParts(array $contextDataSet)
+    private function createTestContext()
     {
-        $dataVersion = DataVersion::fromVersionString('-1');
-        $contextBuilder = new ContextBuilder($dataVersion);
-
-        return $contextBuilder->createContext($contextDataSet);
+        return ContextBuilder::rehydrateContext([
+            WebsiteContextDecorator::CODE => 'website',
+            VersionedContext::CODE => '-1'
+        ]);
     }
 
     /**
@@ -72,7 +71,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchCriteria = UnsupportedStubSearchCriterion::create('foo', 'bar');
 
         $searchEngine = $this->createSearchEngineInstance();
-        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
+        $context = $this->createTestContext();
 
         $searchEngine->getSearchDocumentsMatchingCriteria($searchCriteria, $context);
     }
@@ -83,7 +82,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $fieldName = 'non-existing-field-name';
         $criteria = SearchCriterionEqual::create($fieldName, 'whatever');
-        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
+        $context = $this->createTestContext();
 
         $expectedExceptionMessage = sprintf('undefined field %s', SolrSearchEngine::FIELD_PREFIX . $fieldName);
         $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
@@ -98,7 +97,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $searchEngine = new SolrSearchEngine($testSolrConnectionPath, $testSearchableAttributes);
 
-        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
+        $context = $this->createTestContext();
 
         $expectedExceptionMessage = 'Error 404 Not Found';
         $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
