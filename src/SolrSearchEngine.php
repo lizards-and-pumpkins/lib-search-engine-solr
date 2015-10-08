@@ -310,7 +310,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         $responseJson = curl_exec($curlHandle);
         $response = json_decode($responseJson, true);
-        $this->validateSolrResponse($responseJson);
+        $this->validateSolrResponse($response, $responseJson);
 
         return $response;
     }
@@ -332,13 +332,18 @@ class SolrSearchEngine implements SearchEngine, Clearable
     }
 
     /**
+     * @param mixed[]|null $decodedResponse
      * @param string $rawResponse
      */
-    private function validateSolrResponse($rawResponse)
+    private function validateSolrResponse($decodedResponse, $rawResponse)
     {
         if (json_last_error() !== JSON_ERROR_NONE) {
             $errorMessage = preg_replace('/.*<title>|<\/title>.*/ism', '', $rawResponse);
             throw new SolrException($errorMessage);
+        }
+
+        if (is_array($decodedResponse) && isset($decodedResponse['error'])) {
+            throw new SolrException($decodedResponse['error']['msg']);
         }
     }
 }

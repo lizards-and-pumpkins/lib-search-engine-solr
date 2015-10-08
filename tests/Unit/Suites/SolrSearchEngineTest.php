@@ -6,6 +6,7 @@ use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\WebsiteContextDecorator;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
+use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
@@ -78,6 +79,20 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
     {
+        $searchEngine = $this->createSearchEngineInstance();
+
+        $fieldName = 'non-existing-field-name';
+        $criteria = SearchCriterionEqual::create($fieldName, 'whatever');
+        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
+
+        $expectedExceptionMessage = sprintf('undefined field %s', SolrSearchEngine::FIELD_PREFIX . $fieldName);
+        $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
+
+        $searchEngine->getSearchDocumentsMatchingCriteria($criteria, $context);
+    }
+
+    public function testExceptionIsThrownIfSolrIsNotAccessible()
+    {
         $testSolrConnectionPath = 'http://localhost:8983/solr/nonexistingcore/';
         $testSearchableAttributes = ['foo', 'baz'];
 
@@ -85,7 +100,9 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
 
-        $this->setExpectedException(SolrException::class, 'Error 404 Not Found');
+        $expectedExceptionMessage = 'Error 404 Not Found';
+        $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
+
         $searchEngine->query('foo', $context);
     }
 }
