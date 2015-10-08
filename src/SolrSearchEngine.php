@@ -250,7 +250,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function createContextFromDocumentData(array $documentData)
     {
-        $contextDataSet = $this->getSolrDocumentFieldsStartingWith($documentData, self::CONTEXT_PREFIX);
+        $contextSolrDocumentFields = $this->getSolrDocumentFieldsStartingWith($documentData, self::CONTEXT_PREFIX);
+        $contextDataSet = array_map('array_shift', $contextSolrDocumentFields);
         return ContextBuilder::rehydrateContext($contextDataSet);
     }
 
@@ -264,7 +265,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $documentFieldsArray = [];
         foreach ($documentData as $fieldName => $fieldValue) {
             if (preg_match('/^' . $prefix . '(.*)/', $fieldName, $matches)) {
-                $documentFieldsArray[$matches[1]] = is_array($fieldValue) ? $fieldValue[0] : $fieldValue;
+                $documentFieldsArray[$matches[1]] = $fieldValue;
             }
         }
 
