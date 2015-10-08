@@ -90,7 +90,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     public function query($queryString, Context $context)
     {
         $fieldsQueryString = implode(' OR ', array_map(function ($fieldName) use ($queryString) {
-            return addslashes(self::FIELD_PREFIX . $fieldName) . ':"' . addslashes($queryString) . '"';
+            return urlencode(self::FIELD_PREFIX . $fieldName) . ':"' . urlencode($queryString) . '"';
         }, $this->searchableFields));
         $contextQueryString = $this->convertContextIntoQueryString($context);
 
@@ -129,8 +129,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function convertContextIntoQueryString(Context $context)
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            $fieldName = addslashes(self::CONTEXT_PREFIX . $contextCode);
-            $fieldValue = addslashes($context->getValue($contextCode));
+            $fieldName = urlencode(addslashes(self::CONTEXT_PREFIX . $contextCode));
+            $fieldValue = urlencode(addslashes($context->getValue($contextCode)));
             return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
         }, $context->getSupportedCodes()));
     }
