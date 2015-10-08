@@ -129,8 +129,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function convertContextIntoQueryString(Context $context)
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            $fieldName = urlencode(addslashes(self::CONTEXT_PREFIX . $contextCode));
-            $fieldValue = urlencode(addslashes($context->getValue($contextCode)));
+            $fieldName = urlencode(self::CONTEXT_PREFIX . $contextCode);
+            $fieldValue = urlencode($context->getValue($contextCode));
             return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
         }, $context->getSupportedCodes()));
     }
@@ -168,8 +168,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function createPrimitiveOperationQueryString(array $criteria)
     {
-        $fieldName = addslashes(self::FIELD_PREFIX . $criteria['fieldName']);
-        $fieldValue = addslashes($criteria['fieldValue']);
+        $fieldName = self::FIELD_PREFIX . $criteria['fieldName'];
+        $fieldValue = $criteria['fieldValue'];
         $operator = $this->getSolrOperator($criteria['operation']);
 
         return $operator->getFormattedQueryString($fieldName, $fieldValue);

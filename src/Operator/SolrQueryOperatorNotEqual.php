@@ -9,6 +9,6 @@ class SolrQueryOperatorNotEqual implements SolrQueryOperator
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
-        return sprintf('(-%s:"%s" AND *:*)', $fieldName, $fieldValue);
+        return sprintf('(-%s:"%s" AND *:*)', urlencode($fieldName), urlencode($fieldValue));
     }
 }
