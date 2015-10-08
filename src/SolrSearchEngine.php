@@ -48,58 +48,38 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     public function addSearchDocumentCollection(SearchDocumentCollection $documentsCollection)
     {
-        $rawDocuments = array_reduce($documentsCollection->getDocuments(), function ($carry, SearchDocument $document) {
-            return $carry . $this->formatQueryFieldXml($document);
-        }, '');
-        $rawPost = '<add>' . $rawDocuments . '</add>';
-
         $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
+        $documents = array_map(function (SearchDocument $document) {
+            return array_merge(
+                ['id' => (string) $document->getProductId()],
+                $this->getSearchDocumentFields($document->getFieldsCollection()),
+                $this->getContextFields($document->getContext())
+            );
+        }, $documentsCollection->getDocuments());
 
-        $this->sendRawPostRequest($url, $rawPost);
-    }
-
-    /**
-     * @param SearchDocument $document
-     * @return string
-     */
-    private function formatQueryFieldXml(SearchDocument $document)
-    {
-        $rawDocumentFields = $this->buildSearchDocumentFieldsXml($document->getFieldsCollection());
-        $rawContextFields = $this->buildContextFieldsXml($document->getContext());
-        return '<add>
-                    <doc>
-                        <field name="product_id">' . addslashes($document->getProductId()) . '</field>
-                        ' . $rawDocumentFields . '
-                        ' . $rawContextFields . '
-                    </doc>
-                </add>';
+        $this->sendRawPostRequest($url, json_encode($documents));
     }
 
     /**
      * @param SearchDocumentFieldCollection $fieldCollection
-     * @return string
+     * @return array[]
      */
-    private function buildSearchDocumentFieldsXml(SearchDocumentFieldCollection $fieldCollection)
+    private function getSearchDocumentFields(SearchDocumentFieldCollection $fieldCollection)
     {
         return array_reduce($fieldCollection->getFields(), function ($carry, SearchDocumentField $field) {
-            $fieldName = addslashes(self::FIELD_PREFIX . $field->getKey());
-            return $carry . array_reduce($field->getValues(), function ($carry, $fieldValue) use ($fieldName) {
-                return $carry .sprintf('<field name="%s">%s</field>', $fieldName, addslashes($fieldValue));
-            }, '');
-        }, '');
+            return array_merge([self::FIELD_PREFIX . $field->getKey() => $field->getValues()], $carry);
+        }, []);
     }
 
     /**
      * @param Context $context
-     * @return string
+     * @return string[]
      */
-    private function buildContextFieldsXml(Context $context)
+    private function getContextFields(Context $context)
     {
         return array_reduce($context->getSupportedCodes(), function ($carry, $contextCode) use ($context) {
-            $fieldName = addslashes(self::CONTEXT_PREFIX . $contextCode);
-            $fieldValue = addslashes($context->getValue($contextCode));
-            return $carry . sprintf('<field name="%s">%s</field>', $fieldName, $fieldValue);
-        }, '');
+            return array_merge([self::CONTEXT_PREFIX . $contextCode => $context->getValue($contextCode)], $carry);
+        }, []);
     }
 
     /**
@@ -136,12 +116,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     public function clear()
     {
-        $parameters = [
-            'stream.body' => '<delete><query>*:*</query></delete>',
-            'commit'      => 'true'
-        ];
-        $url = $this->constructUrl(self::UPDATE_SERVLET, $parameters);
-        $this->sendRequest($url);
+        $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
+        $request = ['delete' => ['query' => '*:*']];
+
+        $this->sendRawPostRequest($url, json_encode($request));
     }
 
     /**
@@ -240,7 +218,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $searchDocuments = array_map(function (array $document) {
             $searchDocumentFieldsCollection = $this->createSearchDocumentFieldsCollectionFromDocumentData($document);
             $context = $this->createContextFromDocumentData($document);
-            $productId = ProductId::fromString($document['product_id']);
+            $productId = ProductId::fromString($document['id']);
 
             return new SearchDocument($searchDocumentFieldsCollection, $context, $productId);
         }, $responseDocuments);
@@ -278,7 +256,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $documentFieldsArray = [];
         foreach ($documentData as $fieldName => $fieldValue) {
             if (preg_match('/^' . $prefix . '(.*)/', $fieldName, $matches)) {
-                $documentFieldsArray[$matches[1]] = $fieldValue;
+                $documentFieldsArray[$matches[1]] = is_array($fieldValue) ? $fieldValue[0] : $fieldValue;
             }
         }
 
@@ -319,7 +297,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         $curlHandle = curl_init($url);
         curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-type: text/xml']);
+        curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-type: application/json']);
 
         return $curlHandle;
     }

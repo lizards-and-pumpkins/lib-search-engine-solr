@@ -6,15 +6,11 @@ use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\WebsiteContextDecorator;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentCollection;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Stub\UnsupportedStubSearchCriterion;
 use LizardsAndPumpkins\DataVersion;
-use LizardsAndPumpkins\Product\ProductId;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
@@ -59,24 +55,11 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
     }
 
     /**
-     * @param ProductId $productId
-     * @param string[] $searchDocumentFields
-     * @return SearchDocument
-     */
-    private function createSearchDocument(ProductId $productId, array $searchDocumentFields)
-    {
-        $searchDocumentFieldsCollection = SearchDocumentFieldCollection::fromArray($searchDocumentFields);
-        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
-
-        return new SearchDocument($searchDocumentFieldsCollection, $context, $productId);
-    }
-
-    /**
      * @return SearchEngine
      */
     protected function createSearchEngineInstance()
     {
-        $testSolrConnectionPath = 'http://localhost:8983/solr/';
+        $testSolrConnectionPath = 'http://localhost:8983/solr/gettingstarted/';
         $testSearchableAttributes = ['foo', 'baz'];
 
         return new SolrSearchEngine($testSolrConnectionPath, $testSearchableAttributes);
@@ -95,24 +78,14 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
     {
-        $searchEngine = $this->createSearchEngineInstance();
+        $testSolrConnectionPath = 'http://localhost:8983/solr/nonexistingcore/';
+        $testSearchableAttributes = ['foo', 'baz'];
 
-        $productId = ProductId::fromString(uniqid());
-        $fieldName = 'price';
-        $fieldValue = 'foo';
+        $searchEngine = new SolrSearchEngine($testSolrConnectionPath, $testSearchableAttributes);
 
-        $searchDocument = $this->createSearchDocument($productId, [$fieldName => $fieldValue]);
-        $searchDocumentCollection = new SearchDocumentCollection($searchDocument);
+        $context = $this->createContextFromDataParts([WebsiteContextDecorator::CODE => 'website']);
 
-        $expectedExceptionMessage = sprintf(
-            "Error 400 ERROR: [doc=%s] Error adding field '%s%s'='%s'",
-            $productId,
-            SolrSearchEngine::FIELD_PREFIX,
-            $fieldName,
-            $fieldValue
-        );
-
-        $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
-        $searchEngine->addSearchDocumentCollection($searchDocumentCollection);
+        $this->setExpectedException(SolrException::class, 'Error 404 Not Found');
+        $searchEngine->query('foo', $context);
     }
 }
