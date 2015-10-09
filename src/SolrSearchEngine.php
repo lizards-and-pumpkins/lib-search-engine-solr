@@ -51,7 +51,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
         $documents = array_map(function (SearchDocument $document) {
             return array_merge(
-                ['id' => (string) $document->getProductId()],
+                ['product_id' => (string) $document->getProductId()],
                 $this->getSearchDocumentFields($document->getFieldsCollection()),
                 $this->getContextFields($document->getContext())
             );
@@ -226,7 +226,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $searchDocuments = array_map(function (array $document) {
             $searchDocumentFieldsCollection = $this->createSearchDocumentFieldsCollectionFromDocumentData($document);
             $context = $this->createContextFromDocumentData($document);
-            $productId = ProductId::fromString($document['id']);
+            $productId = ProductId::fromString(array_shift($document['product_id']));
 
             return new SearchDocument($searchDocumentFieldsCollection, $context, $productId);
         }, $responseDocuments);
