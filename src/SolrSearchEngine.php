@@ -21,6 +21,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     const UPDATE_SERVLET = 'update';
     const SEARCH_SERVLET = 'select';
     const FIELD_PREFIX = 'lizards_and_pumpkins_field_';
+    const DOCUMENT_ID_FIELD_NAME = 'id';
     const PRODUCT_ID_FIELD_NAME = 'product_id';
     const CONTEXT_PREFIX = 'lizards_and_pumpkins_context_';
 
@@ -51,10 +52,14 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
         $documents = array_map(function (SearchDocument $document) {
+            $context = $document->getContext();
             return array_merge(
-                [self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()],
+                [
+                    self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context->toString(),
+                    self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()
+                ],
                 $this->getSearchDocumentFields($document->getFieldsCollection()),
-                $this->getContextFields($document->getContext())
+                $this->getContextFields($context)
             );
         }, $documentsCollection->getDocuments());
 
