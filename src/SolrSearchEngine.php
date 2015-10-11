@@ -333,11 +333,21 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         $defaultParameters = ['wt' => 'json'];
         $parameters = array_merge($defaultParameters, $requestParameters);
-
-        $queryString = http_build_query($parameters);
-        $queryString = preg_replace('/%5B(?:[0-9]|[1-9][0-9]+)%5D=/', '=', $queryString);
+        $queryString = $this->buildSolrQueryString($parameters);
 
         return $this->solrConnectionPath . $servlet . '?' . $queryString;
+    }
+
+    /**
+     * @param string[] $parameters
+     * @return string
+     */
+    private function buildSolrQueryString(array $parameters)
+    {
+        $replaceSolrArrayWithPlainFieldPattern = '/%5B(?:[0-9]|[1-9][0-9]+)%5D=/';
+        $queryString = http_build_query($parameters);
+
+        return preg_replace($replaceSolrArrayWithPlainFieldPattern, '=', $queryString);
     }
 
     /**
