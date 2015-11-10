@@ -55,7 +55,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
             $context = $document->getContext();
             return array_merge(
                 [
-                    self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context->toString(),
+                    self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context,
                     self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()
                 ],
                 $this->getSearchDocumentFields($document->getFieldsCollection()),
