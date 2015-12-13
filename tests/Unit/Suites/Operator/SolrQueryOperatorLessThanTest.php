@@ -8,7 +8,7 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 class SolrQueryOperatorLessThanTest extends AbstractSolrQueryOperatorTest
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     final protected function getOperatorInstance()
     {
@@ -16,7 +16,7 @@ class SolrQueryOperatorLessThanTest extends AbstractSolrQueryOperatorTest
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     final protected function getExpectedExpression($fieldName, $fieldValue)
     {

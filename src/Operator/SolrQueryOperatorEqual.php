@@ -5,7 +5,7 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 class SolrQueryOperatorEqual implements SolrQueryOperator
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
