@@ -2,24 +2,24 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
+use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderConfig;
+use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderDirection;
+use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
-use LizardsAndPumpkins\Context\VersionedContext;
-use LizardsAndPumpkins\Context\WebsiteContextDecorator;
+use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Stub\UnsupportedStubSearchCriterion;
+use LizardsAndPumpkins\Product\AttributeCode;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
  * @uses   \LizardsAndPumpkins\Context\ContextBuilder
- * @uses   \LizardsAndPumpkins\Context\ContextDecorator
- * @uses   \LizardsAndPumpkins\Context\LocaleContextDecorator
- * @uses   \LizardsAndPumpkins\Context\VersionedContext
- * @uses   \LizardsAndPumpkins\Context\WebsiteContextDecorator
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\CompositeSearchCriterion
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterion
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual
@@ -48,60 +48,142 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
      */
     private function createTestContext()
     {
-        return ContextBuilder::rehydrateContext([
-            WebsiteContextDecorator::CODE => 'website',
-            VersionedContext::CODE => '-1'
+        return SelfContainedContextBuilder::rehydrateContext([
+            'website' => 'website',
+            'version' => '-1'
         ]);
     }
 
     /**
+     * @param string $sortByFieldCode
+     * @param string $sortDirection
+     * @return SortOrderConfig|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private function createStubSortOrderConfig($sortByFieldCode, $sortDirection)
+    {
+        $stubAttributeCode = $this->getMock(AttributeCode::class, [], [], '', false);
+        $stubAttributeCode->method('__toString')->willReturn($sortByFieldCode);
+
+        $sortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $sortOrderConfig->method('getAttributeCode')->willReturn($stubAttributeCode);
+        $sortOrderConfig->method('getSelectedDirection')->willReturn($sortDirection);
+
+        return $sortOrderConfig;
+    }
+
+    /**
+     * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      * @return SearchEngine
      */
-    protected function createSearchEngineInstance()
-    {
-        $testSolrConnectionPath = 'http://localhost:8983/solr/gettingstarted/';
+    final protected function createSearchEngineInstance(
+        FacetFieldTransformationRegistry $facetFieldTransformationRegistry
+    ) {
+        $testSolrConnectionPath = 'http://localhost:8983/solr/techproducts/';
         $testSearchableAttributes = ['foo', 'baz'];
 
-        return new SolrSearchEngine($testSolrConnectionPath, $testSearchableAttributes);
+        return new SolrSearchEngine(
+            $testSolrConnectionPath,
+            $testSearchableAttributes,
+            $facetFieldTransformationRegistry
+        );
     }
 
     public function testExceptionIsThrownIfSearchCriteriaOperationIsNotSupported()
     {
+        $fieldCode = 'foo';
+        $fieldValue = 'bar';
+
         $this->setExpectedException(UnsupportedSearchCriteriaOperationException::class);
-        $searchCriteria = UnsupportedStubSearchCriterion::create('foo', 'bar');
+        $searchCriteria = UnsupportedStubSearchCriterion::create($fieldCode, $fieldValue);
 
-        $searchEngine = $this->createSearchEngineInstance();
+        $stubFacetFieldTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
+
+        $searchEngine = $this->createSearchEngineInstance($stubFacetFieldTransformationRegistry);
+
+        $filterSelection = [];
         $context = $this->createTestContext();
+        $facetFilterRequest = new FacetFilterRequest;
+        $rowsPerPage = 100;
+        $pageNumber = 0;
+        $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->getSearchDocumentsMatchingCriteria($searchCriteria, $context);
+        $searchEngine->getSearchDocumentsMatchingCriteria(
+            $searchCriteria,
+            $filterSelection,
+            $context,
+            $facetFilterRequest,
+            $rowsPerPage,
+            $pageNumber,
+            $sortOrderConfig
+        );
     }
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
     {
-        $searchEngine = $this->createSearchEngineInstance();
+        $fieldCode = 'non-existing-field-name';
+        $fieldValue = 'whatever';
 
-        $fieldName = 'non-existing-field-name';
-        $criteria = SearchCriterionEqual::create($fieldName, 'whatever');
-        $context = $this->createTestContext();
+        $stubFacetFieldTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
 
-        $expectedExceptionMessage = sprintf('undefined field %s', SolrSearchEngine::FIELD_PREFIX . $fieldName);
+        $searchEngine = $this->createSearchEngineInstance($stubFacetFieldTransformationRegistry);
+
+        $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
+
+        $expectedExceptionMessage = sprintf('undefined field %s', $fieldCode);
         $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
 
-        $searchEngine->getSearchDocumentsMatchingCriteria($criteria, $context);
+        $filterSelection = [];
+        $context = $this->createTestContext();
+        $facetFilterRequest = new FacetFilterRequest;
+        $rowsPerPage = 100;
+        $pageNumber = 0;
+        $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
+
+        $searchEngine->getSearchDocumentsMatchingCriteria(
+            $searchCriteria,
+            $filterSelection,
+            $context,
+            $facetFilterRequest,
+            $rowsPerPage,
+            $pageNumber,
+            $sortOrderConfig
+        );
     }
 
     public function testExceptionIsThrownIfSolrIsNotAccessible()
     {
+        $fieldCode = 'foo';
+        $fieldValue = 'bar';
+
         $testSolrConnectionPath = 'http://localhost:8983/solr/nonexistingcore/';
         $testSearchableAttributes = ['foo', 'baz'];
+        $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
 
-        $searchEngine = new SolrSearchEngine($testSolrConnectionPath, $testSearchableAttributes);
-
-        $context = $this->createTestContext();
+        $searchEngine = new SolrSearchEngine(
+            $testSolrConnectionPath,
+            $testSearchableAttributes,
+            $stubTransformationRegistry
+        );
 
         $expectedExceptionMessage = 'Error 404 Not Found';
         $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
 
-        $searchEngine->query('foo', $context);
+        $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
+        $filterSelection = [];
+        $context = $this->createTestContext();
+        $facetFilterRequest = new FacetFilterRequest;
+        $rowsPerPage = 100;
+        $pageNumber = 0;
+        $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
+
+        $searchEngine->getSearchDocumentsMatchingCriteria(
+            $searchCriteria,
+            $filterSelection,
+            $context,
+            $facetFilterRequest,
+            $rowsPerPage,
+            $pageNumber,
+            $sortOrderConfig
+        );
     }
 }
