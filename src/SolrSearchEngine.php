@@ -445,9 +445,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function getSelectedFacetQueries(array $filterSelection)
     {
         return array_reduce(array_keys($filterSelection), function (array $carry, $filterCode) use ($filterSelection) {
-            return array_reduce($filterSelection[$filterCode], function (array $carry, $filterValue) use ($filterCode) {
-                return array_merge($carry, [sprintf('%s:%s', $filterCode, $filterValue)]);
-            }, $carry);
+            if (count($filterSelection[$filterCode]) > 0) {
+                $carry[] = sprintf('%s:("%s")', $filterCode, implode('" OR "', $filterSelection[$filterCode]));
+            }
+            return $carry;
         }, []);
     }
 
