@@ -4,6 +4,7 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorNotEqual
+ * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLike
  */
 class SolrQueryOperatorLikeTest extends AbstractSolrQueryOperatorTest
 {
