@@ -446,10 +446,29 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         return array_reduce(array_keys($filterSelection), function (array $carry, $filterCode) use ($filterSelection) {
             if (count($filterSelection[$filterCode]) > 0) {
-                $carry[] = sprintf('%s:("%s")', $filterCode, implode('" OR "', $filterSelection[$filterCode]));
+                $carry[] = $this->getFormattedFacetQueryValues($filterCode, $filterSelection[$filterCode]);
             }
             return $carry;
         }, []);
+    }
+
+    /**
+     * @param string $filterCode
+     * @param string[] $filterValues
+     * @return string
+     */
+    private function getFormattedFacetQueryValues($filterCode, array $filterValues)
+    {
+        if ($this->facetFieldTransformationRegistry->hasTransformationForCode($filterCode)) {
+            $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($filterCode);
+            $formattedRanges = array_map(function($filterValue) use ($transformation) {
+                $facetFilterRange = $transformation->decode($filterValue);
+                return sprintf('[%s TO %s]', $facetFilterRange->from(), $facetFilterRange->to());
+            }, $filterValues);
+            return sprintf('%s:(%s)', $filterCode, implode(' OR ', $formattedRanges));
+        }
+
+        return sprintf('%s:("%s")', $filterCode, implode('" OR "', $filterValues));
     }
 
     /**
