@@ -678,7 +678,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $parameters = [
             'q'     => $query,
             'rows'  => $rowsPerPage,
-            'start' => $pageNumber,
+            'start' => $pageNumber * $rowsPerPage,
             'sort'  => $sortOrderConfig->getAttributeCode() . ' ' . $sortOrderConfig->getSelectedDirection(),
         ];
         $facetParameters = $this->getFacetRequestParameters($facetFilterRequest, $filterSelection);
