@@ -23,6 +23,6 @@ class SolrQueryOperatorLikeTest extends AbstractSolrQueryOperatorTest
      */
     final protected function getExpectedExpression($fieldName, $fieldValue)
     {
-        return sprintf('%s%s:"*%s*"', $fieldName, SolrSearchEngine::TOKENIZED_FIELD_SUFFIX, $fieldValue);
+        return sprintf('%s%s:"%s"', $fieldName, SolrSearchEngine::TOKENIZED_FIELD_SUFFIX, $fieldValue);
     }
 }
