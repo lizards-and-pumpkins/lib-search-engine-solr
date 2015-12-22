@@ -33,6 +33,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     const SEARCH_SERVLET = 'select';
     const DOCUMENT_ID_FIELD_NAME = 'id';
     const PRODUCT_ID_FIELD_NAME = 'product_id';
+    const TOKENIZED_FIELD_SUFFIX = '_tokenized';
 
     /**
      * @var string
