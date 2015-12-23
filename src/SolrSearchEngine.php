@@ -68,17 +68,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
     public function addSearchDocumentCollection(SearchDocumentCollection $documentsCollection)
     {
         $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
-        $documents = array_map(function (SearchDocument $document) {
-            $context = $document->getContext();
-            return array_merge(
-                [
-                    self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context,
-                    self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()
-                ],
-                $this->getSearchDocumentFields($document->getFieldsCollection()),
-                $this->getContextFields($context)
-            );
-        }, $documentsCollection->getDocuments());
+        $documents = array_map([$this, 'convertSearchDocumentToArray'], iterator_to_array($documentsCollection));
 
         $this->sendRawPostRequest($url, json_encode($documents));
     }
@@ -596,40 +586,9 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private function getNonSelectedFacetFieldsFromSolrFacetQueries(array $facetQueries, array $filterSelection)
     {
         $selectedAttributeCodes = array_keys($filterSelection);
-        $rawFacetQueries = array_reduce(
-            array_keys($facetQueries),
-            function (array $carry, $query) use ($facetQueries, $selectedAttributeCodes) {
-                preg_match('/^(.*):\[(.*) TO (.*)\]$/', $query, $matches);
+        $rawFacetQueries = $this->buildRawFacetQueriesForGivenAttributes($facetQueries, $selectedAttributeCodes);
 
-                $attributeCode = $matches[1];
-
-                if (in_array($attributeCode, $selectedAttributeCodes)) {
-                    return $carry;
-                }
-
-                if (!isset($carry[$attributeCode])) {
-                    $carry[$attributeCode] = [];
-                }
-
-                $value = $this->getEncodedFilterRange($attributeCode, $matches[2], $matches[3]);
-                $count = $facetQueries[$query];
-
-                $carry[$attributeCode][$value] = $count;
-
-                return $carry;
-            },
-            []
-        );
-
-        return array_map(function ($attributeCodeString) use ($rawFacetQueries) {
-            $attributeCode = AttributeCode::fromString($attributeCodeString);
-            $facetFieldValues = array_map(function ($value) use ($attributeCodeString, $rawFacetQueries) {
-                $count = $rawFacetQueries[$attributeCodeString][$value];
-                return FacetFieldValue::create((string) $value, $count);
-            }, array_keys($rawFacetQueries[$attributeCodeString]));
-
-            return new FacetField($attributeCode, ...$facetFieldValues);
-        }, array_keys($rawFacetQueries));
+        return $this->buildFacetFieldValuesFromRawFacetQueries($rawFacetQueries);
     }
 
     /**
@@ -646,15 +605,12 @@ class SolrSearchEngine implements SearchEngine, Clearable
             );
         }
 
-        $from = '*' === $from ?
-            '' :
-            $from;
-        $to = '*' === $to ?
-            '' :
-            $to;
-
-        $facetFilterRange = FacetFilterRange::create($from, $to);
         $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($attributeCode);
+
+        $facetFilterRange = FacetFilterRange::create(
+            $this->getRangeBoundaryValue($from),
+            $this->getRangeBoundaryValue($to)
+        );
 
         return $transformation->encode($facetFilterRange);
     }
@@ -684,8 +640,83 @@ class SolrSearchEngine implements SearchEngine, Clearable
         ];
         $facetParameters = $this->getFacetRequestParameters($facetFilterRequest, $filterSelection);
         $url = $this->constructUrl(self::SEARCH_SERVLET, array_merge($parameters, $facetParameters));
-        $response = $this->sendRequest($url);
 
-        return $response;
+        return $this->sendRequest($url);
+    }
+
+    /**
+     * @param SearchDocument $document
+     * @return string[]
+     */
+    private function convertSearchDocumentToArray(SearchDocument $document)
+    {
+        $context = $document->getContext();
+
+        return array_merge(
+            [
+                self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context,
+                self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()
+            ],
+            $this->getSearchDocumentFields($document->getFieldsCollection()),
+            $this->getContextFields($context)
+        );
+    }
+
+    /**
+     * @param int[] $facetQueries
+     * @param $attributeCodes
+     * @return array[]
+     */
+    private function buildRawFacetQueriesForGivenAttributes(array $facetQueries, $attributeCodes)
+    {
+        $queries = array_keys($facetQueries);
+
+        return array_reduce($queries, function (array $carry, $query) use ($facetQueries, $attributeCodes) {
+            preg_match('/^(.*):\[(.*) TO (.*)\]$/', $query, $matches);
+
+            $attributeCode = $matches[1];
+
+            if (in_array($attributeCode, $attributeCodes)) {
+                return $carry;
+            }
+
+            $value = $this->getEncodedFilterRange($attributeCode, $matches[2], $matches[3]);
+            $count = $facetQueries[$query];
+
+            $carry[$attributeCode][$value] = $count;
+
+            return $carry;
+        }, []);
+    }
+
+    /**
+     * @param array[] $rawFacetQueries
+     * @return FacetField[]
+     */
+    private function buildFacetFieldValuesFromRawFacetQueries(array $rawFacetQueries)
+    {
+        return array_map(function ($attributeCodeString) use ($rawFacetQueries) {
+            $attributeCode = AttributeCode::fromString($attributeCodeString);
+            $facetFieldValues = array_map(function ($value) use ($attributeCodeString, $rawFacetQueries) {
+                $count = $rawFacetQueries[$attributeCodeString][$value];
+
+                return FacetFieldValue::create((string) $value, $count);
+            }, array_keys($rawFacetQueries[$attributeCodeString]));
+
+            return new FacetField($attributeCode, ...$facetFieldValues);
+        }, array_keys($rawFacetQueries));
+    }
+
+    /**
+     * @param string $boundary
+     * @return string
+     */
+    private function getRangeBoundaryValue($boundary)
+    {
+        if ('*' === $boundary) {
+            return '';
+        }
+
+        return $boundary;
     }
 }
