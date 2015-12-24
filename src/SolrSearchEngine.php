@@ -71,6 +71,24 @@ class SolrSearchEngine implements SearchEngine, Clearable
     }
 
     /**
+     * @param SearchDocument $document
+     * @return string[]
+     */
+    private function convertSearchDocumentToArray(SearchDocument $document)
+    {
+        $context = $document->getContext();
+
+        return array_merge(
+            [
+                self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context,
+                self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()
+            ],
+            $this->getSearchDocumentFields($document->getFieldsCollection()),
+            $this->getContextFields($context)
+        );
+    }
+
+    /**
      * @param SearchDocumentFieldCollection $fieldCollection
      * @return array[]
      */
@@ -555,24 +573,6 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $this->validateSolrResponse($response);
 
         return $response;
-    }
-
-    /**
-     * @param SearchDocument $document
-     * @return string[]
-     */
-    private function convertSearchDocumentToArray(SearchDocument $document)
-    {
-        $context = $document->getContext();
-
-        return array_merge(
-            [
-                self::DOCUMENT_ID_FIELD_NAME => $document->getProductId() . '_' . $context,
-                self::PRODUCT_ID_FIELD_NAME => (string) $document->getProductId()
-            ],
-            $this->getSearchDocumentFields($document->getFieldsCollection()),
-            $this->getContextFields($context)
-        );
     }
 
     /**
