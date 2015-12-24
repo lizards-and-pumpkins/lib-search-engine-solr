@@ -16,18 +16,3 @@ spl_autoload_register(function ($class) {
         require $file;
     }
 });
-
-$abstractSearchEngineTestLoader = function ($class) {
-    $prefix = 'LizardsAndPumpkins\\';
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        return;
-    }
-    $relativeClass = substr($class, $len);
-    $className = str_replace('\\', '/', $relativeClass);
-    $file = __DIR__ . '/../../vendor/lizards-and-pumpkins/catalog/tests/Unit/Suites/' . $className . '.php';
-    if (file_exists($file)) {
-        require $file;
-    }
-};
-spl_autoload_register($abstractSearchEngineTestLoader);

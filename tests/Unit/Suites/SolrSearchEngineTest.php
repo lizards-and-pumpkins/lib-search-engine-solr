@@ -8,12 +8,11 @@ use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransf
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
-use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
+use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Stub\UnsupportedStubSearchCriterion;
 use LizardsAndPumpkins\Product\AttributeCode;
 
@@ -42,8 +41,18 @@ use LizardsAndPumpkins\Product\AttributeCode;
  * @uses   \LizardsAndPumpkins\DataVersion
  * @uses   \LizardsAndPumpkins\Product\ProductId
  */
-class SolrSearchEngineTest extends AbstractSearchEngineTest
+class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @var SolrSearchEngine
+     */
+    private $searchEngine;
+
+    /**
+     * @var SolrHttpClient|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private $stubSolrHttpClient;
+
     /**
      * @return Context
      */
@@ -72,20 +81,16 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         return $sortOrderConfig;
     }
 
-    /**
-     * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
-     * @return SearchEngine
-     */
-    final protected function createSearchEngineInstance(
-        FacetFieldTransformationRegistry $facetFieldTransformationRegistry
-    ) {
-        $testSolrConnectionPath = 'http://localhost:8983/solr/techproducts/';
+    protected function setUp()
+    {
+        $this->stubSolrHttpClient = $this->getMock(SolrHttpClient::class, [], [], '', false);
         $testSearchableAttributes = ['foo', 'baz'];
+        $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
 
-        return new SolrSearchEngine(
-            $testSolrConnectionPath,
+        $this->searchEngine = new SolrSearchEngine(
+            $this->stubSolrHttpClient,
             $testSearchableAttributes,
-            $facetFieldTransformationRegistry
+            $stubTransformationRegistry
         );
     }
 
@@ -97,10 +102,6 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $this->setExpectedException(UnsupportedSearchCriteriaOperationException::class);
         $searchCriteria = UnsupportedStubSearchCriterion::create($fieldCode, $fieldValue);
 
-        $stubFacetFieldTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
-
-        $searchEngine = $this->createSearchEngineInstance($stubFacetFieldTransformationRegistry);
-
         $filterSelection = [];
         $context = $this->createTestContext();
         $facetFilterRequest = new FacetFilterRequest;
@@ -108,7 +109,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $pageNumber = 0;
         $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->getSearchDocumentsMatchingCriteria(
+        $this->searchEngine->getSearchDocumentsMatchingCriteria(
             $searchCriteria,
             $filterSelection,
             $context,
@@ -119,56 +120,16 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         );
     }
 
-    public function testExceptionIsThrownIfSolrQueryIsInvalid()
+    public function testExceptionIsThrownIfSolrResponseContainsErrorMessage()
     {
-        $fieldCode = 'non-existing-field-name';
-        $fieldValue = 'whatever';
+        $testErrorMessage = 'Test error message.';
+        $this->stubSolrHttpClient->method('select')->willReturn(['error' => ['msg' => $testErrorMessage]]);
 
-        $stubFacetFieldTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
+        $this->setExpectedException(SolrException::class, $testErrorMessage);
 
-        $searchEngine = $this->createSearchEngineInstance($stubFacetFieldTransformationRegistry);
-
-        $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
-
-        $expectedExceptionMessage = sprintf('undefined field %s', $fieldCode);
-        $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
-
-        $filterSelection = [];
-        $context = $this->createTestContext();
-        $facetFilterRequest = new FacetFilterRequest;
-        $rowsPerPage = 100;
-        $pageNumber = 0;
-        $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
-
-        $searchEngine->getSearchDocumentsMatchingCriteria(
-            $searchCriteria,
-            $filterSelection,
-            $context,
-            $facetFilterRequest,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
-        );
-    }
-
-    public function testExceptionIsThrownIfSolrIsNotAccessible()
-    {
         $fieldCode = 'foo';
         $fieldValue = 'bar';
 
-        $testSolrConnectionPath = 'http://localhost:8983/solr/nonexistingcore/';
-        $testSearchableAttributes = ['foo', 'baz'];
-        $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
-
-        $searchEngine = new SolrSearchEngine(
-            $testSolrConnectionPath,
-            $testSearchableAttributes,
-            $stubTransformationRegistry
-        );
-
-        $expectedExceptionMessage = 'Error 404 Not Found';
-        $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
-
         $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
         $filterSelection = [];
         $context = $this->createTestContext();
@@ -177,7 +138,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $pageNumber = 0;
         $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->getSearchDocumentsMatchingCriteria(
+        $this->searchEngine->getSearchDocumentsMatchingCriteria(
             $searchCriteria,
             $filterSelection,
             $context,

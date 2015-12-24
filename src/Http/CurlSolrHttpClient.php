@@ -58,8 +58,18 @@ class CurlSolrHttpClient implements SolrHttpClient
         $parameters = array_merge($defaultParameters, $requestParameters);
 
         $queryString = http_build_query($parameters);
+        $arraySafeQueryString = $this->replaceSolrArrayWithPlainField($queryString);
 
-        return $this->solrConnectionPath . $servlet . '?' . $queryString;
+        return $this->solrConnectionPath . $servlet . '?' . $arraySafeQueryString;
+    }
+
+    /**
+     * @param string $queryString
+     * @return string
+     */
+    private function replaceSolrArrayWithPlainField($queryString)
+    {
+        return preg_replace('/%5B(?:[0-9]|[1-9][0-9]+)%5D=/', '=', $queryString);
     }
 
     /**

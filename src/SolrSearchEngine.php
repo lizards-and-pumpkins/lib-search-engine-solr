@@ -22,6 +22,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
+use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
 use LizardsAndPumpkins\Product\AttributeCode;
 use LizardsAndPumpkins\Product\ProductId;
@@ -29,16 +30,14 @@ use LizardsAndPumpkins\Utils\Clearable;
 
 class SolrSearchEngine implements SearchEngine, Clearable
 {
-    const UPDATE_SERVLET = 'update';
-    const SEARCH_SERVLET = 'select';
     const DOCUMENT_ID_FIELD_NAME = 'id';
     const PRODUCT_ID_FIELD_NAME = 'product_id';
     const TOKENIZED_FIELD_SUFFIX = '_tokenized';
 
     /**
-     * @var string
+     * @var SolrHttpClient
      */
-    private $solrConnectionPath;
+    private $client;
 
     /**
      * @var string[]
@@ -51,26 +50,24 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private $facetFieldTransformationRegistry;
 
     /**
-     * @param string $solrConnectionPath
+     * @param SolrHttpClient $client
      * @param string[] $searchableFields
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      */
     public function __construct(
-        $solrConnectionPath,
+        SolrHttpClient $client,
         array $searchableFields,
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
     ) {
-        $this->solrConnectionPath = $solrConnectionPath;
+        $this->client = $client;
         $this->searchableFields = $searchableFields;
         $this->facetFieldTransformationRegistry = $facetFieldTransformationRegistry;
     }
 
     public function addSearchDocumentCollection(SearchDocumentCollection $documentsCollection)
     {
-        $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
         $documents = array_map([$this, 'convertSearchDocumentToArray'], iterator_to_array($documentsCollection));
-
-        $this->sendRawPostRequest($url, json_encode($documents));
+        $this->client->update($documents);
     }
 
     /**
@@ -138,10 +135,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     public function clear()
     {
-        $url = $this->constructUrl(self::UPDATE_SERVLET, ['commit' => 'true']);
         $request = ['delete' => ['query' => '*:*']];
-
-        $this->sendRawPostRequest($url, json_encode($request));
+        $this->client->update($request);
     }
 
     /**
@@ -226,96 +221,12 @@ class SolrSearchEngine implements SearchEngine, Clearable
     }
 
     /**
-     * @param string $url
-     * @return mixed
+     * @param mixed[] $response
      */
-    private function sendRequest($url)
+    private function validateSolrResponse(array $response)
     {
-        $curlHandle = $this->prepareCurlHandle($url);
-        curl_setopt($curlHandle, CURLOPT_POST, false);
-
-        return $this->executeCurlRequest($curlHandle);
-    }
-
-    /**
-     * @param string $url
-     * @param string $rawPostFields
-     * @return mixed
-     */
-    private function sendRawPostRequest($url, $rawPostFields)
-    {
-        $curlHandle = $this->prepareCurlHandle($url);
-        curl_setopt($curlHandle, CURLOPT_POST, true);
-        curl_setopt($curlHandle, CURLOPT_POSTFIELDS, $rawPostFields);
-
-        return $this->executeCurlRequest($curlHandle);
-    }
-
-    /**
-     * @param string $url
-     * @return resource
-     */
-    private function prepareCurlHandle($url)
-    {
-        $curlHandle = curl_init($url);
-        curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-type: application/json']);
-
-        return $curlHandle;
-    }
-
-    /**
-     * @param resource $curlHandle
-     * @return mixed
-     */
-    private function executeCurlRequest($curlHandle)
-    {
-        $responseJson = curl_exec($curlHandle);
-        $response = json_decode($responseJson, true);
-        $this->validateSolrResponse($response, $responseJson);
-
-        return $response;
-    }
-
-    /**
-     * @param string $servlet
-     * @param string[] $requestParameters
-     * @return string
-     */
-    private function constructUrl($servlet, array $requestParameters)
-    {
-        $defaultParameters = ['wt' => 'json'];
-        $parameters = array_merge($defaultParameters, $requestParameters);
-        $queryString = $this->buildSolrQueryString($parameters);
-
-        return $this->solrConnectionPath . $servlet . '?' . $queryString;
-    }
-
-    /**
-     * @param string[] $parameters
-     * @return string
-     */
-    private function buildSolrQueryString(array $parameters)
-    {
-        $replaceSolrArrayWithPlainFieldPattern = '/%5B(?:[0-9]|[1-9][0-9]+)%5D=/';
-        $queryString = http_build_query($parameters);
-
-        return preg_replace($replaceSolrArrayWithPlainFieldPattern, '=', $queryString);
-    }
-
-    /**
-     * @param mixed[]|null $decodedResponse
-     * @param string $rawResponse
-     */
-    private function validateSolrResponse($decodedResponse, $rawResponse)
-    {
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $errorMessage = preg_replace('/.*<title>|<\/title>.*/ism', '', $rawResponse);
-            throw new SolrException($errorMessage);
-        }
-
-        if (is_array($decodedResponse) && isset($decodedResponse['error'])) {
-            throw new SolrException($decodedResponse['error']['msg']);
+        if (isset($response['error'])) {
+            throw new SolrException($response['error']['msg']);
         }
     }
 
@@ -639,9 +550,11 @@ class SolrSearchEngine implements SearchEngine, Clearable
             'sort'  => $sortOrderConfig->getAttributeCode() . ' ' . $sortOrderConfig->getSelectedDirection(),
         ];
         $facetParameters = $this->getFacetRequestParameters($facetFilterRequest, $filterSelection);
-        $url = $this->constructUrl(self::SEARCH_SERVLET, array_merge($parameters, $facetParameters));
 
-        return $this->sendRequest($url);
+        $response = $this->client->select(array_merge($parameters, $facetParameters));
+        $this->validateSolrResponse($response);
+
+        return $response;
     }
 
     /**
