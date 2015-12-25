@@ -11,8 +11,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestField;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestRangedField;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentCollection;
@@ -121,7 +119,12 @@ class SolrSearchEngine implements SearchEngine, Clearable
         SortOrderConfig $sortOrderConfig
     ) {
         $query = SolrQuery::create($criteria, $context, $rowsPerPage, $pageNumber, $sortOrderConfig);
-        $response = $this->getSearchDocumentMatchingQuery($query, $filterSelection, $facetFilterRequest);
+        $solrFacetFilterRequest = new SolrFacetFilterRequest(
+            $facetFilterRequest,
+            $filterSelection,
+            $this->facetFieldTransformationRegistry
+        );
+        $response = $this->getSearchDocumentMatchingQuery($query, $solrFacetFilterRequest);
 
         $totalNumberOfResults = $this->getTotalNumberOfResultsFromSolrResponse($response);
         $matchingProductIds = $this->getMatchingProductIdsFromSolrResponse($response);
@@ -139,17 +142,6 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         $request = ['delete' => ['query' => '*:*']];
         $this->client->update($request);
-    }
-
-    /**
-     * @param mixed[] $responseDocuments
-     * @return ProductId[]
-     */
-    private function getProductIdsOfMatchingDocuments(array $responseDocuments)
-    {
-        return array_map(function (array $document) {
-            return ProductId::fromString($document[self::PRODUCT_ID_FIELD_NAME]);
-        }, $responseDocuments);
     }
 
     /**
@@ -176,6 +168,17 @@ class SolrSearchEngine implements SearchEngine, Clearable
     }
 
     /**
+     * @param mixed[] $responseDocuments
+     * @return ProductId[]
+     */
+    private function getProductIdsOfMatchingDocuments(array $responseDocuments)
+    {
+        return array_map(function (array $document) {
+            return ProductId::fromString($document[self::PRODUCT_ID_FIELD_NAME]);
+        }, $responseDocuments);
+    }
+
+    /**
      * @param array[] $response
      * @return int
      */
@@ -186,123 +189,6 @@ class SolrSearchEngine implements SearchEngine, Clearable
         }
 
         return $response['response']['numFound'];
-    }
-
-    /**
-     * @param FacetFilterRequest $facetFilterRequest
-     * @param string[] $filterSelection
-     * @return mixed[]
-     */
-    private function getFacetRequestParameters(FacetFilterRequest $facetFilterRequest, array $filterSelection)
-    {
-        $fields = $facetFilterRequest->getFields();
-
-        if (count($fields) === 0) {
-            return [];
-        }
-
-        $parameters = [
-            'facet' => 'on',
-            'facet.mincount' => 1
-        ];
-
-        $facetFields = $this->getFacetFields(...$fields);
-
-        if (count($facetFields) > 0) {
-            $parameters['facet.field'] = $facetFields;
-        }
-
-        $facetQueries = $this->getFacetQueries(...$fields);
-
-        if (count($facetQueries) > 0) {
-            $parameters['facet.query'] = $facetQueries;
-        }
-
-        if (count($filterSelection) > 0) {
-            $parameters['fq'] = $this->getSelectedFacetQueries($filterSelection);
-        }
-
-        return $parameters;
-    }
-
-    /**
-     * @param FacetFilterRequestField[] ...$fields
-     * @return string[]
-     */
-    private function getFacetFields(FacetFilterRequestField ...$fields)
-    {
-        return array_reduce($fields, function(array $carry, FacetFilterRequestField $field) {
-            if ($field->isRanged()) {
-                return $carry;
-            }
-            return array_merge($carry, [(string) $field->getAttributeCode()]);
-        }, []);
-    }
-
-    /**
-     * @param FacetFilterRequestField[] ...$fields
-     * @return string[]
-     */
-    private function getFacetQueries(FacetFilterRequestField ...$fields)
-    {
-        return array_reduce($fields, function(array $carry, FacetFilterRequestField $field) {
-            if (!$field->isRanged()) {
-                return $carry;
-            }
-
-            return array_merge($carry, $this->getRangedFieldRanges($field));
-        }, []);
-    }
-
-    /**
-     * @param FacetFilterRequestRangedField $field
-     * @return string[]
-     */
-    private function getRangedFieldRanges(FacetFilterRequestRangedField $field)
-    {
-        return array_reduce($field->getRanges(), function (array $carry, FacetFilterRange $range) use ($field) {
-            $from = null === $range->from() ?
-                '*' :
-                $range->from();
-            $to = null === $range->to() ?
-                '*' :
-                $range->to();
-
-            return array_merge($carry, [sprintf('%s:[%s TO %s]', $field->getAttributeCode(), $from, $to)]);
-        }, []);
-    }
-
-    /**
-     * @param string[] $filterSelection
-     * @return string[]
-     */
-    private function getSelectedFacetQueries(array $filterSelection)
-    {
-        return array_reduce(array_keys($filterSelection), function (array $carry, $filterCode) use ($filterSelection) {
-            if (count($filterSelection[$filterCode]) > 0) {
-                $carry[] = $this->getFormattedFacetQueryValues($filterCode, $filterSelection[$filterCode]);
-            }
-            return $carry;
-        }, []);
-    }
-
-    /**
-     * @param string $filterCode
-     * @param string[] $filterValues
-     * @return string
-     */
-    private function getFormattedFacetQueryValues($filterCode, array $filterValues)
-    {
-        if ($this->facetFieldTransformationRegistry->hasTransformationForCode($filterCode)) {
-            $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($filterCode);
-            $formattedRanges = array_map(function($filterValue) use ($transformation) {
-                $facetFilterRange = $transformation->decode($filterValue);
-                return sprintf('[%s TO %s]', $facetFilterRange->from(), $facetFilterRange->to());
-            }, $filterValues);
-            return sprintf('%s:(%s)', $filterCode, implode(' OR ', $formattedRanges));
-        }
-
-        return sprintf('%s:("%s")', $filterCode, implode('" OR "', $filterValues));
     }
 
     /**
@@ -369,11 +255,12 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
         foreach ($selectedAttributeCodes as $attributeCodeString) {
             $selectedFiltersExceptCurrentOne = array_diff_key($filterSelection, [$attributeCodeString => []]);
-            $response = $this->getSearchDocumentMatchingQuery(
-                $query,
+            $solrFacetFilterRequest = new SolrFacetFilterRequest(
+                $facetFilterRequest,
                 $selectedFiltersExceptCurrentOne,
-                $facetFilterRequest
+                $this->facetFieldTransformationRegistry
             );
+            $response = $this->getSearchDocumentMatchingQuery($query, $solrFacetFilterRequest);
             $facetFieldsSiblings = $this->getNonSelectedFacetFieldsFromSolrFacetFields(
                 $response['facet_counts']['facet_fields'],
                 $selectedFiltersExceptCurrentOne
@@ -442,17 +329,13 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param SolrQuery $query
-     * @param array[] $filterSelection
-     * @param FacetFilterRequest $facetFilterRequest
+     * @param SolrFacetFilterRequest $solrFacetFilterRequest
      * @return mixed
      */
-    private function getSearchDocumentMatchingQuery(
-        SolrQuery $query,
-        array $filterSelection,
-        FacetFilterRequest $facetFilterRequest
-    ) {
+    private function getSearchDocumentMatchingQuery(SolrQuery $query, SolrFacetFilterRequest $solrFacetFilterRequest)
+    {
         $queryParameters = $query->toArray();
-        $facetParameters = $this->getFacetRequestParameters($facetFilterRequest, $filterSelection);
+        $facetParameters = $solrFacetFilterRequest->toArray();
 
         $response = $this->client->select(array_merge($queryParameters, $facetParameters));
         $this->validateSolrResponse($response);
