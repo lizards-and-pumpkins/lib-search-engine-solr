@@ -11,9 +11,7 @@ use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Stub\UnsupportedStubSearchCriterion;
 use LizardsAndPumpkins\Product\AttributeCode;
 
 /**
@@ -38,7 +36,7 @@ use LizardsAndPumpkins\Product\AttributeCode;
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLessThan
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLessOrEqualThan
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLike
- * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrQuery
+ * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLike
  * @uses   \LizardsAndPumpkins\DataVersion
  * @uses   \LizardsAndPumpkins\Product\ProductId
  */
@@ -92,32 +90,6 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
             $this->stubSolrHttpClient,
             $testSearchableAttributes,
             $stubTransformationRegistry
-        );
-    }
-
-    public function testExceptionIsThrownIfSearchCriteriaOperationIsNotSupported()
-    {
-        $fieldCode = 'foo';
-        $fieldValue = 'bar';
-
-        $this->setExpectedException(UnsupportedSearchCriteriaOperationException::class);
-        $searchCriteria = UnsupportedStubSearchCriterion::create($fieldCode, $fieldValue);
-
-        $filterSelection = [];
-        $context = $this->createTestContext();
-        $facetFilterRequest = new FacetFilterRequest;
-        $rowsPerPage = 100;
-        $pageNumber = 0;
-        $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
-
-        $this->searchEngine->getSearchDocumentsMatchingCriteria(
-            $searchCriteria,
-            $filterSelection,
-            $context,
-            $facetFilterRequest,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
         );
     }
 
