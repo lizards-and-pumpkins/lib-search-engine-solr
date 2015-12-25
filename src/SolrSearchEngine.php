@@ -378,14 +378,22 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         return array_map(function ($attributeCodeString) use ($rawFacetQueries) {
             $attributeCode = AttributeCode::fromString($attributeCodeString);
-            $facetFieldValues = array_map(function ($value) use ($attributeCodeString, $rawFacetQueries) {
-                $count = $rawFacetQueries[$attributeCodeString][$value];
-
-                return FacetFieldValue::create((string) $value, $count);
-            }, array_keys($rawFacetQueries[$attributeCodeString]));
-
+            $attributeValueCounts = $rawFacetQueries[$attributeCodeString];
+            $facetFieldValues = $this->createFacetFieldValues($attributeValueCounts);
             return new FacetField($attributeCode, ...$facetFieldValues);
         }, array_keys($rawFacetQueries));
+    }
+
+    /**
+     * @param int[] $attributeValueCounts
+     * @return FacetFieldValue[]
+     */
+    function createFacetFieldValues(array $attributeValueCounts)
+    {
+        return array_map(function ($value) use ($attributeValueCounts) {
+            $count = $attributeValueCounts[$value];
+            return FacetFieldValue::create((string) $value, $count);
+        }, array_keys($attributeValueCounts));
     }
 
     /**
