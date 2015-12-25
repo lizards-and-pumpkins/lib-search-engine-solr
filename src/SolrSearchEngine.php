@@ -21,9 +21,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldC
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
 use LizardsAndPumpkins\Product\AttributeCode;
 use LizardsAndPumpkins\Product\ProductId;
 use LizardsAndPumpkins\Utils\Clearable;
@@ -122,19 +120,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $pageNumber,
         SortOrderConfig $sortOrderConfig
     ) {
-        $fieldsQueryString = $this->convertCriteriaIntoSolrQueryString($criteria);
-        $contextQueryString = $this->convertContextIntoQueryString($context);
-
-        $query = '(' . $fieldsQueryString . ') AND ' . $contextQueryString;
-
-        $response = $this->getSearchDocumentMatchingQuery(
-            $query,
-            $filterSelection,
-            $facetFilterRequest,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
-        );
+        $query = SolrQuery::create($criteria, $context, $rowsPerPage, $pageNumber, $sortOrderConfig);
+        $response = $this->getSearchDocumentMatchingQuery($query, $filterSelection, $facetFilterRequest);
 
         $totalNumberOfResults = $this->getTotalNumberOfResultsFromSolrResponse($response);
         $matchingProductIds = $this->getMatchingProductIdsFromSolrResponse($response);
@@ -142,10 +129,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
             $response,
             $query,
             $filterSelection,
-            $facetFilterRequest,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
+            $facetFilterRequest
         );
 
         return new SearchEngineResponse($facetFieldsCollection, $totalNumberOfResults, ...$matchingProductIds);
@@ -155,76 +139,6 @@ class SolrSearchEngine implements SearchEngine, Clearable
     {
         $request = ['delete' => ['query' => '*:*']];
         $this->client->update($request);
-    }
-
-    /**
-     * @param Context $context
-     * @return string
-     */
-    private function convertContextIntoQueryString(Context $context)
-    {
-        return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            $fieldName = urlencode($contextCode);
-            $fieldValue = urlencode($context->getValue($contextCode));
-            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
-        }, $context->getSupportedCodes()));
-    }
-
-    /**
-     * @param SearchCriteria $criteria
-     * @return string
-     */
-    private function convertCriteriaIntoSolrQueryString(SearchCriteria $criteria)
-    {
-        $criteriaJson = json_encode($criteria);
-        $criteriaArray = json_decode($criteriaJson, true);
-
-        return $this->createSolrQueryStringFromCriteriaArray($criteriaArray);
-    }
-
-    /**
-     * @param mixed[] $criteria
-     * @return string
-     */
-    private function createSolrQueryStringFromCriteriaArray(array $criteria)
-    {
-        if (isset($criteria['condition'])) {
-            $subCriteriaQueries = array_map([$this, 'createSolrQueryStringFromCriteriaArray'], $criteria['criteria']);
-            $glue = ' ' . strtoupper($criteria['condition']) . ' ';
-            return '(' . implode($glue, $subCriteriaQueries) . ')';
-        }
-
-        return $this->createPrimitiveOperationQueryString($criteria);
-    }
-
-    /**
-     * @param string[] $criteria
-     * @return string
-     */
-    private function createPrimitiveOperationQueryString(array $criteria)
-    {
-        $fieldName = $criteria['fieldName'];
-        $fieldValue = $criteria['fieldValue'];
-        $operator = $this->getSolrOperator($criteria['operation']);
-
-        return $operator->getFormattedQueryString($fieldName, $fieldValue);
-    }
-
-    /**
-     * @param string $operation
-     * @return SolrQueryOperator
-     */
-    private function getSolrOperator($operation)
-    {
-        $className = __NAMESPACE__ . '\\Operator\\SolrQueryOperator' . $operation;
-
-        if (!class_exists($className)) {
-            throw new UnsupportedSearchCriteriaOperationException(
-                sprintf('Unsupported criterion operation "%s".', $operation)
-            );
-        }
-
-        return new $className;
     }
 
     /**
@@ -393,22 +307,16 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param array[] $response
-     * @param string $query
+     * @param SolrQuery $query
      * @param array[] $filterSelection
      * @param FacetFilterRequest $facetFilterRequest
-     * @param int $rowsPerPage
-     * @param int $pageNumber
-     * @param SortOrderConfig $sortOrderConfig
      * @return FacetFieldCollection
      */
     private function getFacetFieldCollectionFromSolrResponse(
         array $response,
-        $query,
+        SolrQuery $query,
         array $filterSelection,
-        FacetFilterRequest $facetFilterRequest,
-        $rowsPerPage,
-        $pageNumber,
-        SortOrderConfig $sortOrderConfig
+        FacetFilterRequest $facetFilterRequest
     ) {
         if (!isset($response['facet_counts']['facet_fields']) || !isset($response['facet_counts']['facet_queries'])) {
             return new FacetFieldCollection();
@@ -425,10 +333,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $selectedFacetFieldsSiblings = $this->getSelectedFacetFieldsFromSolrFacetFields(
             $filterSelection,
             $query,
-            $facetFilterRequest,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
+            $facetFilterRequest
         );
 
         return new FacetFieldCollection(...$facetFields, ...$facetQueries, ...$selectedFacetFieldsSiblings);
@@ -450,20 +355,14 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param array[] $filterSelection
-     * @param string $query
+     * @param SolrQuery $query
      * @param FacetFilterRequest $facetFilterRequest
-     * @param int $rowsPerPage
-     * @param int $pageNumber
-     * @param SortOrderConfig $sortOrderConfig
      * @return FacetField[]
      */
     private function getSelectedFacetFieldsFromSolrFacetFields(
         array $filterSelection,
-        $query,
-        FacetFilterRequest $facetFilterRequest,
-        $rowsPerPage,
-        $pageNumber,
-        SortOrderConfig $sortOrderConfig
+        SolrQuery $query,
+        FacetFilterRequest $facetFilterRequest
     ) {
         $selectedAttributeCodes = array_keys($filterSelection);
         $facetFields = [];
@@ -473,10 +372,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
             $response = $this->getSearchDocumentMatchingQuery(
                 $query,
                 $selectedFiltersExceptCurrentOne,
-                $facetFilterRequest,
-                $rowsPerPage,
-                $pageNumber,
-                $sortOrderConfig
+                $facetFilterRequest
             );
             $facetFieldsSiblings = $this->getNonSelectedFacetFieldsFromSolrFacetFields(
                 $response['facet_counts']['facet_fields'],
@@ -545,31 +441,20 @@ class SolrSearchEngine implements SearchEngine, Clearable
     }
 
     /**
-     * @param string $query
+     * @param SolrQuery $query
      * @param array[] $filterSelection
      * @param FacetFilterRequest $facetFilterRequest
-     * @param int $rowsPerPage
-     * @param int $pageNumber
-     * @param SortOrderConfig $sortOrderConfig
      * @return mixed
      */
     private function getSearchDocumentMatchingQuery(
-        $query,
+        SolrQuery $query,
         array $filterSelection,
-        FacetFilterRequest $facetFilterRequest,
-        $rowsPerPage,
-        $pageNumber,
-        SortOrderConfig $sortOrderConfig
+        FacetFilterRequest $facetFilterRequest
     ) {
-        $parameters = [
-            'q'     => $query,
-            'rows'  => $rowsPerPage,
-            'start' => $pageNumber * $rowsPerPage,
-            'sort'  => $sortOrderConfig->getAttributeCode() . ' ' . $sortOrderConfig->getSelectedDirection(),
-        ];
+        $queryParameters = $query->toArray();
         $facetParameters = $this->getFacetRequestParameters($facetFilterRequest, $filterSelection);
 
-        $response = $this->client->select(array_merge($parameters, $facetParameters));
+        $response = $this->client->select(array_merge($queryParameters, $facetParameters));
         $this->validateSolrResponse($response);
 
         return $response;

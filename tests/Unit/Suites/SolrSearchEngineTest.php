@@ -38,6 +38,7 @@ use LizardsAndPumpkins\Product\AttributeCode;
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLessThan
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLessOrEqualThan
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLike
+ * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrQuery
  * @uses   \LizardsAndPumpkins\DataVersion
  * @uses   \LizardsAndPumpkins\Product\ProductId
  */
