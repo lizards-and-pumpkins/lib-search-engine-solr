@@ -17,6 +17,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\CurlSolrHttpClient;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\Exception\SolrConnectionException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine;
 use LizardsAndPumpkins\Product\AttributeCode;
+use LizardsAndPumpkins\Utils\Clearable;
 
 class SolrSearchEngineTest extends AbstractSearchEngineTest
 {
@@ -44,9 +45,15 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         );
     }
 
+    protected function tearDown()
+    {
+        $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
+        $this->createSearchEngineInstance($facetFieldTransformationRegistry)->clear();
+    }
+
     /**
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
-     * @return SearchEngine
+     * @return SearchEngine|Clearable
      */
     final protected function createSearchEngineInstance(
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
