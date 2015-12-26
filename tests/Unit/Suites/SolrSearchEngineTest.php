@@ -23,7 +23,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
     /**
      * @var SolrHttpClient|\PHPUnit_Framework_MockObject_MockObject
      */
-    private $stubSolrHttpClient;
+    private $mockHttpClient;
 
     /**
      * @return Context
@@ -55,22 +55,28 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->stubSolrHttpClient = $this->getMock(SolrHttpClient::class, [], [], '', false);
+        $this->mockHttpClient = $this->getMock(SolrHttpClient::class, [], [], '', false);
         $testSearchableAttributes = ['foo', 'baz'];
         $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
 
         $this->searchEngine = new SolrSearchEngine(
-            $this->stubSolrHttpClient,
+            $this->mockHttpClient,
             $testSearchableAttributes,
             $stubTransformationRegistry
         );
+    }
+
+    public function testUpdateRequestFlushingSolrIndexIsSentToHttpClient()
+    {
+        $this->mockHttpClient->expects($this->once())->method('update')->with(['delete' => ['query' => '*:*']]);
+        $this->searchEngine->clear();
     }
 
     public function testExceptionIsThrownIfSolrResponseContainsErrorMessage()
     {
         $this->markTestSkipped('Already moved to SolrResponse and left here as a reference.');
         $testErrorMessage = 'Test error message.';
-        $this->stubSolrHttpClient->method('select')->willReturn(['error' => ['msg' => $testErrorMessage]]);
+        $this->mockHttpClient->method('select')->willReturn(['error' => ['msg' => $testErrorMessage]]);
 
         $this->setExpectedException(SolrException::class, $testErrorMessage);
 

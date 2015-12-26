@@ -51,9 +51,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $this->facetFieldTransformationRegistry = $facetFieldTransformationRegistry;
     }
 
-    public function addSearchDocumentCollection(SearchDocumentCollection $documentsCollection)
+    public function addSearchDocumentCollection(SearchDocumentCollection $collection)
     {
-        (new SolrWriter($this->client))->addSearchDocumentsCollectionToSolr($documentsCollection);
+        $documents = array_map([SolrDocumentBuilder::class, 'fromSearchDocument'], iterator_to_array($collection));
+        $this->client->update($documents);
     }
 
     /**
@@ -90,7 +91,8 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     public function clear()
     {
-        (new SolrWriter($this->client))->deleteAllDocuments();
+        $request = ['delete' => ['query' => '*:*']];
+        $this->client->update($request);
     }
 
     /**
