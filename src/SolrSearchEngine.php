@@ -139,7 +139,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private function getTotalNumberOfResultsFromSolrResponse(array $response)
     {
-        if(! isset($response['response']['numFound'])) {
+        if (! isset($response['response']['numFound'])) {
             return 0;
         }
 
@@ -247,7 +247,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param array[] $facetQueries
-     * @param array $filterSelection
+     * @param array[] $filterSelection
      * @return FacetField[]
      */
     private function getNonSelectedFacetFieldsFromSolrFacetQueries(array $facetQueries, array $filterSelection)
@@ -300,10 +300,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param int[] $facetQueries
-     * @param $attributeCodes
+     * @param string[] $attributeCodes
      * @return array[]
      */
-    private function buildRawFacetQueriesForGivenAttributes(array $facetQueries, $attributeCodes)
+    private function buildRawFacetQueriesForGivenAttributes(array $facetQueries, array $attributeCodes)
     {
         $queries = array_keys($facetQueries);
 
@@ -343,7 +343,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
      * @param int[] $attributeValueCounts
      * @return FacetFieldValue[]
      */
-    function createFacetFieldValues(array $attributeValueCounts)
+    private function createFacetFieldValues(array $attributeValueCounts)
     {
         return array_map(function ($value) use ($attributeValueCounts) {
             $count = $attributeValueCounts[$value];

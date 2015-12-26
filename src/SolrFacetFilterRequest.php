@@ -61,12 +61,12 @@ class SolrFacetFilterRequest
     }
 
     /**
-     * @param FacetFilterRequestField[] ...$fields
+     * @param FacetFilterRequestField[] $fields
      * @return string[]
      */
     private function getFacetFields(FacetFilterRequestField ...$fields)
     {
-        return array_reduce($fields, function(array $carry, FacetFilterRequestField $field) {
+        return array_reduce($fields, function (array $carry, FacetFilterRequestField $field) {
             if ($field->isRanged()) {
                 return $carry;
             }
@@ -75,12 +75,12 @@ class SolrFacetFilterRequest
     }
 
     /**
-     * @param FacetFilterRequestField[] ...$fields
+     * @param FacetFilterRequestField[] $fields
      * @return string[]
      */
     private function getFacetQueries(FacetFilterRequestField ...$fields)
     {
-        return array_reduce($fields, function(array $carry, FacetFilterRequestField $field) {
+        return array_reduce($fields, function (array $carry, FacetFilterRequestField $field) {
             if (!$field->isRanged()) {
                 return $carry;
             }
@@ -125,7 +125,7 @@ class SolrFacetFilterRequest
     {
         if ($this->facetFieldTransformationRegistry->hasTransformationForCode($filterCode)) {
             $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($filterCode);
-            $formattedRanges = array_map(function($filterValue) use ($transformation) {
+            $formattedRanges = array_map(function ($filterValue) use ($transformation) {
                 $facetFilterRange = $transformation->decode($filterValue);
                 return sprintf('[%s TO %s]', $facetFilterRange->from(), $facetFilterRange->to());
             }, $filterValues);
