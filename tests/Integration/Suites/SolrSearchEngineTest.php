@@ -72,7 +72,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
     {
-        $nonExistingFieldCode = 'qux';
+        $nonExistingFieldCode = 'foooooooo';
         $fieldValue = 'whatever';
 
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
