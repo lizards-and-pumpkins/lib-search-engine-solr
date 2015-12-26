@@ -10,7 +10,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
@@ -65,18 +65,18 @@ class SolrSearchEngine implements SearchEngine, Clearable
     /**
      * {@inheritdoc}
      */
-    public function getSearchDocumentsMatchingCriteria(
+    public function query(
         SearchCriteria $criteria,
         array $filterSelection,
         Context $context,
-        FacetFilterRequest $facetFilterRequest,
+        FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult,
         $rowsPerPage,
         $pageNumber,
         SortOrderConfig $sortOrderConfig
     ) {
         $query = SolrQuery::create($criteria, $context, $rowsPerPage, $pageNumber, $sortOrderConfig);
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
-            $facetFilterRequest,
+            $facetFiltersToIncludeInResult,
             $filterSelection,
             $this->facetFieldTransformationRegistry
         );
@@ -88,7 +88,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
             $response,
             $query,
             $filterSelection,
-            $facetFilterRequest
+            $facetFiltersToIncludeInResult
         );
 
         return new SearchEngineResponse($facetFieldsCollection, $totalNumberOfResults, ...$matchingProductIds);
@@ -150,14 +150,14 @@ class SolrSearchEngine implements SearchEngine, Clearable
      * @param array[] $response
      * @param SolrQuery $query
      * @param array[] $filterSelection
-     * @param FacetFilterRequest $facetFilterRequest
+     * @param FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
      * @return FacetFieldCollection
      */
     private function getFacetFieldCollectionFromSolrResponse(
         array $response,
         SolrQuery $query,
         array $filterSelection,
-        FacetFilterRequest $facetFilterRequest
+        FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
     ) {
         if (!isset($response['facet_counts']['facet_fields']) || !isset($response['facet_counts']['facet_queries'])) {
             return new FacetFieldCollection();
@@ -174,7 +174,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $selectedFacetFieldsSiblings = $this->getSelectedFacetFieldsFromSolrFacetFields(
             $filterSelection,
             $query,
-            $facetFilterRequest
+            $facetFiltersToIncludeInResult
         );
 
         return new FacetFieldCollection(...$facetFields, ...$facetQueries, ...$selectedFacetFieldsSiblings);
@@ -197,13 +197,13 @@ class SolrSearchEngine implements SearchEngine, Clearable
     /**
      * @param array[] $filterSelection
      * @param SolrQuery $query
-     * @param FacetFilterRequest $facetFilterRequest
+     * @param FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
      * @return FacetField[]
      */
     private function getSelectedFacetFieldsFromSolrFacetFields(
         array $filterSelection,
         SolrQuery $query,
-        FacetFilterRequest $facetFilterRequest
+        FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
     ) {
         $selectedAttributeCodes = array_keys($filterSelection);
         $facetFields = [];
@@ -211,7 +211,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         foreach ($selectedAttributeCodes as $attributeCodeString) {
             $selectedFiltersExceptCurrentOne = array_diff_key($filterSelection, [$attributeCodeString => []]);
             $solrFacetFilterRequest = new SolrFacetFilterRequest(
-                $facetFilterRequest,
+                $facetFiltersToIncludeInResult,
                 $selectedFiltersExceptCurrentOne,
                 $this->facetFieldTransformationRegistry
             );

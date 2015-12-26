@@ -9,7 +9,7 @@ use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
@@ -78,16 +78,16 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $filterSelection = [];
         $context = $this->createTestContext();
-        $facetFilterRequest = new FacetFilterRequest;
+        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult;
         $rowsPerPage = 100;
         $pageNumber = 0;
         $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->getSearchDocumentsMatchingCriteria(
+        $searchEngine->query(
             $searchCriteria,
             $filterSelection,
             $context,
-            $facetFilterRequest,
+            $facetFiltersToIncludeInResult,
             $rowsPerPage,
             $pageNumber,
             $sortOrderConfig
@@ -117,16 +117,16 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
         $filterSelection = [];
         $context = $this->createTestContext();
-        $facetFilterRequest = new FacetFilterRequest;
+        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult;
         $rowsPerPage = 100;
         $pageNumber = 0;
         $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->getSearchDocumentsMatchingCriteria(
+        $searchEngine->query(
             $searchCriteria,
             $filterSelection,
             $context,
-            $facetFilterRequest,
+            $facetFiltersToIncludeInResult,
             $rowsPerPage,
             $pageNumber,
             $sortOrderConfig

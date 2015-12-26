@@ -8,7 +8,7 @@ use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransf
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
@@ -108,16 +108,16 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
         $filterSelection = [];
         $context = $this->createTestContext();
-        $facetFilterRequest = new FacetFilterRequest;
+        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult;
         $rowsPerPage = 100;
         $pageNumber = 0;
         $sortOrderConfig = $this->createStubSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $this->searchEngine->getSearchDocumentsMatchingCriteria(
+        $this->searchEngine->query(
             $searchCriteria,
             $filterSelection,
             $context,
-            $facetFilterRequest,
+            $facetFiltersToIncludeInResult,
             $rowsPerPage,
             $pageNumber,
             $sortOrderConfig

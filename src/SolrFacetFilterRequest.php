@@ -4,16 +4,16 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestRangedField;
 
 class SolrFacetFilterRequest
 {
     /**
-     * @var FacetFilterRequest
+     * @var FacetFiltersToIncludeInResult
      */
-    private $facetFilterRequest;
+    private $facetFiltersToIncludeInResult;
 
     /**
      * @var string[]
@@ -26,16 +26,16 @@ class SolrFacetFilterRequest
     private $facetFieldTransformationRegistry;
 
     /**
-     * @param FacetFilterRequest $facetFilterRequest
+     * @param FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
      * @param string[] $filterSelection
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      */
     public function __construct(
-        FacetFilterRequest $facetFilterRequest,
+        FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult,
         array $filterSelection,
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
     ) {
-        $this->facetFilterRequest = $facetFilterRequest;
+        $this->facetFiltersToIncludeInResult = $facetFiltersToIncludeInResult;
         $this->filterSelection = $filterSelection;
         $this->facetFieldTransformationRegistry = $facetFieldTransformationRegistry;
     }
@@ -45,7 +45,7 @@ class SolrFacetFilterRequest
      */
     public function toArray()
     {
-        $fields = $this->facetFilterRequest->getFields();
+        $fields = $this->facetFiltersToIncludeInResult->getFields();
 
         if (count($fields) === 0) {
             return [];

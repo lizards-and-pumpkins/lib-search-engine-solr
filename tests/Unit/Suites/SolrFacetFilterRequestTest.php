@@ -5,7 +5,7 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransformation;
 use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestRangedField;
 use LizardsAndPumpkins\Product\AttributeCode;
@@ -16,9 +16,9 @@ use LizardsAndPumpkins\Product\AttributeCode;
 class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var FacetFilterRequest|\PHPUnit_Framework_MockObject_MockObject
+     * @var FacetFiltersToIncludeInResult|\PHPUnit_Framework_MockObject_MockObject
      */
-    private $stubFacetFilterRequest;
+    private $stubFacetFiltersToIncludeInResult;
 
     /**
      * @var FacetFieldTransformationRegistry|\PHPUnit_Framework_MockObject_MockObject
@@ -65,17 +65,17 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->stubFacetFilterRequest = $this->getMock(FacetFilterRequest::class, [], [], '', false);
+        $this->stubFacetFiltersToIncludeInResult = $this->getMock(FacetFiltersToIncludeInResult::class);
         $this->stubFacetFieldTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
     }
 
     public function testEmptyArrayIsReturnedIfNoFacetFieldsAreRequested()
     {
-        $this->stubFacetFilterRequest->method('getFields')->willReturn([]);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([]);
         $testFilterSelection = [];
 
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
-            $this->stubFacetFilterRequest,
+            $this->stubFacetFiltersToIncludeInResult,
             $testFilterSelection,
             $this->stubFacetFieldTransformationRegistry
         );
@@ -88,12 +88,12 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $testAttributeCode = 'foo';
 
         $stubField = $this->createStubFacetFilterRequestField($testAttributeCode);
-        $this->stubFacetFilterRequest->method('getFields')->willReturn([$stubField]);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([$stubField]);
 
         $testFilterSelection = [];
 
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
-            $this->stubFacetFilterRequest,
+            $this->stubFacetFiltersToIncludeInResult,
             $testFilterSelection,
             $this->stubFacetFieldTransformationRegistry
         );
@@ -116,12 +116,12 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $rangeTo = 10;
 
         $stubRangedField = $this->createStubFacetFilterRequestRangedField($testAttributeCode, $rangeFrom, $rangeTo);
-        $this->stubFacetFilterRequest->method('getFields')->willReturn([$stubRangedField]);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([$stubRangedField]);
 
         $testFilterSelection = [];
 
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
-            $this->stubFacetFilterRequest,
+            $this->stubFacetFiltersToIncludeInResult,
             $testFilterSelection,
             $this->stubFacetFieldTransformationRegistry
         );
@@ -142,12 +142,12 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $testAttributeCode = 'foo';
 
         $stubField = $this->createStubFacetFilterRequestField($testAttributeCode);
-        $this->stubFacetFilterRequest->method('getFields')->willReturn([$stubField]);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([$stubField]);
 
         $testFilterSelection = ['foo' => ['bar', 'baz']];
 
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
-            $this->stubFacetFilterRequest,
+            $this->stubFacetFiltersToIncludeInResult,
             $testFilterSelection,
             $this->stubFacetFieldTransformationRegistry
         );
@@ -168,7 +168,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $testAttributeCode = 'foo';
 
         $stubField = $this->createStubFacetFilterRequestField($testAttributeCode);
-        $this->stubFacetFilterRequest->method('getFields')->willReturn([$stubField]);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([$stubField]);
 
         $testFilterSelection = ['foo' => ['Value does not really matter as it will be transformed in any way.']];
 
@@ -183,7 +183,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $this->stubFacetFieldTransformationRegistry->method('getTransformationByCode')->willReturn($stubTransformation);
 
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
-            $this->stubFacetFilterRequest,
+            $this->stubFacetFiltersToIncludeInResult,
             $testFilterSelection,
             $this->stubFacetFieldTransformationRegistry
         );
