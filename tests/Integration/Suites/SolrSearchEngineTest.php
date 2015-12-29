@@ -58,7 +58,9 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
     final protected function createSearchEngineInstance(
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
     ) {
-        $testSolrConnectionPath = 'http://localhost:8983/solr/techproducts/';
+        $config = EnvironmentConfigReader::fromGlobalState();
+        $testSolrConnectionPath = $config->get('solr_integration_test_connection_path');
+
         $client = new CurlSolrHttpClient($testSolrConnectionPath);
 
         $testSearchableAttributes = ['foo', 'baz'];
