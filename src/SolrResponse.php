@@ -34,19 +34,19 @@ class SolrResponse
     }
 
     /**
-     * @param array[] $response
+     * @param array[] $rawResponse
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      * @return SolrResponse
      */
     public static function fromSolrResponseArray(
-        array $response,
+        array $rawResponse,
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
     ) {
-        if (isset($response['error'])) {
-            throw new SolrException($response['error']['msg']);
+        if (isset($rawResponse['error'])) {
+            throw new SolrException($rawResponse['error']['msg']);
         }
 
-        return new self($response, $facetFieldTransformationRegistry);
+        return new self($rawResponse, $facetFieldTransformationRegistry);
     }
 
     /**
