@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/5.1/phpunit.xsd"
+        backupGlobals="false"
+        backupStaticAttributes="false"
+        cacheTokens="false"
+        bootstrap="bootstrap.php"
+        colors="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        forceCoversAnnotation="true"
+        mapTestClassNameToCoveredClassName="false"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        timeoutForSmallTests="1"
+        timeoutForMediumTests="10"
+        timeoutForLargeTests="60"
+        checkForUnintentionallyCoveredCode="true"
+        beStrictAboutTestsThatDoNotTestAnything="true"
+        beStrictAboutOutputDuringTests="true"
+        verbose="false">
+    <testsuite name="Lizards and Pumpkins Solr Search Engine Module Integration Tests">
+        <directory>Suites</directory>
+    </testsuite>
+    <filter>
+        <whitelist>
+            <directory>../../src</directory>
+        </whitelist>
+    </filter>
+    <php>
+        <!--
+        <server name="LP_SOLR_INTEGRATION_TEST_CONNECTION_PATH" value="http://localhost:8983/solr/test/"/>
+        -->
+    </php>
+</phpunit>
