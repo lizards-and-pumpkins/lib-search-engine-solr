@@ -30,19 +30,6 @@ abstract class AbstractSolrQueryOperatorTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($expectedExpression, $result);
     }
 
-    public function testQueryIsGuardedAgainstSpecialCharacters()
-    {
-        $fieldName = 'fo"o';
-        $encodedFieldName = 'fo%22o';
-        $fieldValue = 'b(a):[r]"';
-        $encodedFieldValue = 'b%28a%29%3A%5Br%5D%22';
-
-        $expectedExpression = $this->getExpectedExpression($encodedFieldName, $encodedFieldValue);
-        $result = $this->operator->getFormattedQueryString($fieldName, $fieldValue);
-
-        $this->assertSame($expectedExpression, $result);
-    }
-
     /**
      * @return SolrQueryOperator
      */

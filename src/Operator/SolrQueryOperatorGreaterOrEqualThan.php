@@ -9,6 +9,6 @@ class SolrQueryOperatorGreaterOrEqualThan implements SolrQueryOperator
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
-        return sprintf('%s:[%s TO *]', urlencode($fieldName), urlencode($fieldValue));
+        return sprintf('%s:[%s TO *]', $fieldName, $fieldValue);
     }
 }
