@@ -9,6 +9,6 @@ class SolrQueryOperatorGreaterThan implements SolrQueryOperator
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
-        return sprintf('(%1$s:[%2$s TO *] AND -%1$s:%2$s)', urlencode($fieldName), urlencode($fieldValue));
+        return sprintf('(%1$s:[%2$s TO *] AND -%1$s:%2$s)', $fieldName, $fieldValue);
     }
 }

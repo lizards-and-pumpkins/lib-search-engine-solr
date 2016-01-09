@@ -9,6 +9,6 @@ class SolrQueryOperatorEqual implements SolrQueryOperator
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
-        return sprintf('%s:"%s"', urlencode($fieldName), urlencode($fieldValue));
+        return sprintf('%s:"%s"', $fieldName, $fieldValue);
     }
 }

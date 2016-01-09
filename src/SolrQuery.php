@@ -170,9 +170,7 @@ class SolrQuery
     private static function convertContextIntoQueryString(Context $context)
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            $fieldName = urlencode($contextCode);
-            $fieldValue = urlencode($context->getValue($contextCode));
-            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
+            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $contextCode, $context->getValue($contextCode));
         }, $context->getSupportedCodes()));
     }
 

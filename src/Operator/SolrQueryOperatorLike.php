@@ -11,11 +11,6 @@ class SolrQueryOperatorLike implements SolrQueryOperator
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
-        return sprintf(
-            '%s%s:"%s"',
-            urlencode($fieldName),
-            SolrSearchEngine::TOKENIZED_FIELD_SUFFIX,
-            urlencode($fieldValue)
-        );
+        return sprintf('%s%s:"%s"', $fieldName, SolrSearchEngine::TOKENIZED_FIELD_SUFFIX, $fieldValue);
     }
 }
