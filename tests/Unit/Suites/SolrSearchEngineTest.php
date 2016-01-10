@@ -16,7 +16,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
@@ -92,11 +91,10 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         $productId = ProductId::fromString(uniqid());
 
         $searchDocument = new SearchDocument($searchDocumentFieldCollection, $context, $productId);
-        $searchDocumentCollection = new SearchDocumentCollection($searchDocument);
         $expectedSolrDocument = SolrDocumentBuilder::fromSearchDocument($searchDocument);
 
         $this->mockHttpClient->expects($this->once())->method('update')->with([$expectedSolrDocument]);
-        $this->searchEngine->addSearchDocumentCollection($searchDocumentCollection);
+        $this->searchEngine->addDocument($searchDocument);
     }
 
     public function testUpdateRequestFlushingSolrIndexIsSentToHttpClient()

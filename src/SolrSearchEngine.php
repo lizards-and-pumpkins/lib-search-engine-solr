@@ -9,7 +9,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentCollection;
+use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
@@ -51,10 +51,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $this->facetFieldTransformationRegistry = $facetFieldTransformationRegistry;
     }
 
-    public function addSearchDocumentCollection(SearchDocumentCollection $collection)
+    public function addDocument(SearchDocument $document)
     {
-        $documents = array_map([SolrDocumentBuilder::class, 'fromSearchDocument'], iterator_to_array($collection));
-        $this->client->update($documents);
+        $solrDocument = SolrDocumentBuilder::fromSearchDocument($document);
+        $this->client->update([$solrDocument]);
     }
 
     /**
