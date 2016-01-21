@@ -2,8 +2,8 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
+use LizardsAndPumpkins\ContentDelivery\Catalog\Search\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderConfig;
-use LizardsAndPumpkins\ContentDelivery\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
