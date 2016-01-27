@@ -7,6 +7,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
+use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\CompositeSearchCriterion;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionLike;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
@@ -27,19 +28,27 @@ class SolrSearchEngine implements SearchEngine, Clearable
     private $client;
 
     /**
+     * @var SearchCriteria
+     */
+    private $globalProductListingCriteria;
+
+    /**
      * @var FacetFieldTransformationRegistry
      */
     private $facetFieldTransformationRegistry;
 
     /**
      * @param SolrHttpClient $client
+     * @param SearchCriteria $globalProductListingCriteria
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      */
     public function __construct(
         SolrHttpClient $client,
+        SearchCriteria $globalProductListingCriteria,
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
     ) {
         $this->client = $client;
+        $this->globalProductListingCriteria = $globalProductListingCriteria;
         $this->facetFieldTransformationRegistry = $facetFieldTransformationRegistry;
     }
 
@@ -87,7 +96,11 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     public function queryFullText($searchString, QueryOptions $queryOptions)
     {
-        $criteria = SearchCriterionLike::create(self::FULL_TEXT_SEARCH_FIELD_NAME, $searchString);
+        $criteria = CompositeSearchCriterion::createAnd(
+            SearchCriterionLike::create(self::FULL_TEXT_SEARCH_FIELD_NAME, $searchString),
+            $this->globalProductListingCriteria
+        );
+
         return $this->query($criteria, $queryOptions);
     }
 

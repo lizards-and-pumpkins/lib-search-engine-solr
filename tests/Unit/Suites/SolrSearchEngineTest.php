@@ -45,6 +45,10 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
      */
     private $mockHttpClient;
 
+    private $testGlobalProductListingCriteriaFieldName = 'bar';
+
+    private $testGlobalProductListingCriteriaFieldValue = 'baz';
+
     /**
      * @return Context
      */
@@ -100,7 +104,16 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         /** @var FacetFieldTransformationRegistry|MockObject $stubTransformationRegistry */
         $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
 
-        $this->searchEngine = new SolrSearchEngine($this->mockHttpClient, $stubTransformationRegistry);
+        $testGlobalProductListingCriteria = SearchCriterionEqual::create(
+            $this->testGlobalProductListingCriteriaFieldName,
+            $this->testGlobalProductListingCriteriaFieldValue
+        );
+
+        $this->searchEngine = new SolrSearchEngine(
+            $this->mockHttpClient,
+            $testGlobalProductListingCriteria,
+            $stubTransformationRegistry
+        );
     }
 
     public function testUpdateRequestContainingSolrDocumentsIsSentToHttpClient()
@@ -159,5 +172,27 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals($expectedFacetFieldCollection, $response->getFacetFieldCollection());
+    }
+
+    public function testSolrQuerySentToHttpClientContainsGlobalProductListingCriteria()
+    {
+        $searchString = 'foo';
+        $filterSelection = [];
+
+        $spy = $this->once();
+        $this->mockHttpClient->expects($spy)->method('select')->willReturn([]);
+
+        $this->searchEngine->queryFullText($searchString, $this->createStubQueryOptions($filterSelection));
+
+        $queryString = $spy->getInvocations()[0]->parameters[0]['q'];
+
+        $expectationRegExp = sprintf(
+            '/^\(\(\(full_text_search:"%s"\) AND bar:"baz"\)\)/',
+            $searchString,
+            $this->testGlobalProductListingCriteriaFieldName,
+            $this->testGlobalProductListingCriteriaFieldValue
+        );
+
+        $this->assertRegExp($expectationRegExp, $queryString);
     }
 }
