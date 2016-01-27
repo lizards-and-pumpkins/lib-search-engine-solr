@@ -3,12 +3,12 @@
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\ContentDelivery\Catalog\Search\FacetFieldTransformation\FacetFieldTransformationRegistry;
-use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderConfig;
-use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
+use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
+use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionLike;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
@@ -19,17 +19,12 @@ class SolrSearchEngine implements SearchEngine, Clearable
 {
     const DOCUMENT_ID_FIELD_NAME = 'id';
     const PRODUCT_ID_FIELD_NAME = 'product_id';
-    const TOKENIZED_FIELD_SUFFIX = '_tokenized';
+    const FULL_TEXT_SEARCH_FIELD_NAME = 'full_text_search';
 
     /**
      * @var SolrHttpClient
      */
     private $client;
-
-    /**
-     * @var string[]
-     */
-    private $searchableFields;
 
     /**
      * @var FacetFieldTransformationRegistry
@@ -38,16 +33,13 @@ class SolrSearchEngine implements SearchEngine, Clearable
 
     /**
      * @param SolrHttpClient $client
-     * @param string[] $searchableFields
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      */
     public function __construct(
         SolrHttpClient $client,
-        array $searchableFields,
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
     ) {
         $this->client = $client;
-        $this->searchableFields = $searchableFields;
         $this->facetFieldTransformationRegistry = $facetFieldTransformationRegistry;
     }
 
@@ -60,16 +52,17 @@ class SolrSearchEngine implements SearchEngine, Clearable
     /**
      * {@inheritdoc}
      */
-    public function query(
-        SearchCriteria $criteria,
-        array $filterSelection,
-        Context $context,
-        FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult,
-        $rowsPerPage,
-        $pageNumber,
-        SortOrderConfig $sortOrderConfig
-    ) {
+    public function query(SearchCriteria $criteria, QueryOptions $queryOptions)
+    {
+        $facetFiltersToIncludeInResult = $queryOptions->getFacetFiltersToIncludeInResult();
+        $filterSelection = $queryOptions->getFilterSelection();
+        $context = $queryOptions->getContext();
+        $rowsPerPage = $queryOptions->getRowsPerPage();
+        $pageNumber = $queryOptions->getPageNumber();
+        $sortOrderConfig = $queryOptions->getSortOrderConfig();
+
         $query = SolrQuery::create($criteria, $context, $rowsPerPage, $pageNumber, $sortOrderConfig);
+
         $facetFilterRequest = new SolrFacetFilterRequest(
             $facetFiltersToIncludeInResult,
             $filterSelection,
@@ -87,6 +80,15 @@ class SolrSearchEngine implements SearchEngine, Clearable
         );
 
         return new SearchEngineResponse($facetFieldsCollection, $totalNumberOfResults, ...$matchingProductIds);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function queryFullText($searchString, QueryOptions $queryOptions)
+    {
+        $criteria = SearchCriterionLike::create(self::FULL_TEXT_SEARCH_FIELD_NAME, $searchString);
+        return $this->query($criteria, $queryOptions);
     }
 
     public function clear()

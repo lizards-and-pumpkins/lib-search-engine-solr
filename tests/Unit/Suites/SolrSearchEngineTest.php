@@ -13,6 +13,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
+use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
@@ -21,6 +22,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
 use LizardsAndPumpkins\Product\AttributeCode;
 use LizardsAndPumpkins\Product\ProductId;
+use \PHPUnit_Framework_MockObject_MockObject as MockObject;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
@@ -71,17 +73,34 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         return $sortOrderConfig;
     }
 
+    /**
+     * @param array[] $filterSelection
+     * @return QueryOptions|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private function createStubQueryOptions(array $filterSelection)
+    {
+        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
+        $stubSortOrderConfig = $this->createStubSortOrderConfig('foo', SortOrderDirection::ASC);
+
+        $stubQueryOptions = $this->getMock(QueryOptions::class, [], [], '', false);
+        $stubQueryOptions->method('getFilterSelection')->willReturn($filterSelection);
+        $stubQueryOptions->method('getContext')->willReturn($this->createTestContext());
+        $stubQueryOptions->method('getFacetFiltersToIncludeInResult')->willReturn($facetFiltersToIncludeInResult);
+        $stubQueryOptions->method('getRowsPerPage')->willReturn(100);
+        $stubQueryOptions->method('getPageNumber')->willReturn(0);
+        $stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+
+        return $stubQueryOptions;
+    }
+
     protected function setUp()
     {
         $this->mockHttpClient = $this->getMock(SolrHttpClient::class, [], [], '', false);
-        $testSearchableAttributes = ['foo', 'baz'];
+
+        /** @var FacetFieldTransformationRegistry|MockObject $stubTransformationRegistry */
         $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
 
-        $this->searchEngine = new SolrSearchEngine(
-            $this->mockHttpClient,
-            $testSearchableAttributes,
-            $stubTransformationRegistry
-        );
+        $this->searchEngine = new SolrSearchEngine($this->mockHttpClient, $stubTransformationRegistry);
     }
 
     public function testUpdateRequestContainingSolrDocumentsIsSentToHttpClient()
@@ -109,21 +128,8 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 
         $searchCriteria = SearchCriterionEqual::create('foo', 'bar');
         $filterSelection = [];
-        $context = $this->createTestContext();
-        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
-        $rowsPerPage = 100;
-        $pageNumber = 0;
-        $sortOrderConfig = $this->createStubSortOrderConfig('foo', SortOrderDirection::ASC);
 
-        $result = $this->searchEngine->query(
-            $searchCriteria,
-            $filterSelection,
-            $context,
-            $facetFiltersToIncludeInResult,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
-        );
+        $result = $this->searchEngine->query($searchCriteria, $this->createStubQueryOptions($filterSelection));
 
         $this->assertInstanceOf(SearchEngineResponse::class, $result);
     }
@@ -142,21 +148,8 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 
         $searchCriteria = SearchCriterionAnything::create();
         $filterSelection = [$attributeCode => [$attributeValue]];
-        $context = $this->createTestContext();
-        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
-        $rowsPerPage = 100;
-        $pageNumber = 0;
-        $sortOrderConfig = $this->createStubSortOrderConfig($attributeCode, SortOrderDirection::ASC);
 
-        $response = $this->searchEngine->query(
-            $searchCriteria,
-            $filterSelection,
-            $context,
-            $facetFiltersToIncludeInResult,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
-        );
+        $response = $this->searchEngine->query($searchCriteria, $this->createStubQueryOptions($filterSelection));
 
         $expectedFacetFieldCollection = new FacetFieldCollection(
             new FacetField(

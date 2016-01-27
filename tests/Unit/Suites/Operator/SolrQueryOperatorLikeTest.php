@@ -2,8 +2,6 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine;
-
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorLike
  */
@@ -22,6 +20,11 @@ class SolrQueryOperatorLikeTest extends AbstractSolrQueryOperatorTest
      */
     final protected function getExpectedExpression($fieldName, $fieldValue)
     {
-        return sprintf('%s%s:"%s"', $fieldName, SolrSearchEngine::TOKENIZED_FIELD_SUFFIX, $fieldValue);
+        $values = explode(' ', $fieldValue);
+        $queries = array_map(function ($value) use ($fieldName) {
+            return sprintf('(%s:"%s")', $fieldName, $value);
+        }, $values);
+
+        return implode(' AND ', $queries);
     }
 }
