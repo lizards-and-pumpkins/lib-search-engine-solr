@@ -187,7 +187,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         $queryString = $spy->getInvocations()[0]->parameters[0]['q'];
 
         $expectationRegExp = sprintf(
-            '/^\(\(\(full_text_search:"%s"\) AND bar:"baz"\)\)/',
+            '/^\(\(\(full_text_search:"%s"\) AND %s:"%s"\)\)/',
             $searchString,
             $this->testGlobalProductListingCriteriaFieldName,
             $this->testGlobalProductListingCriteriaFieldValue
