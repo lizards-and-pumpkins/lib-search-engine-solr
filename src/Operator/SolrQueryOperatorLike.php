@@ -2,8 +2,6 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine;
-
 class SolrQueryOperatorLike implements SolrQueryOperator
 {
     /**
@@ -11,6 +9,11 @@ class SolrQueryOperatorLike implements SolrQueryOperator
      */
     public function getFormattedQueryString($fieldName, $fieldValue)
     {
-        return sprintf('%s%s:"%s"', $fieldName, SolrSearchEngine::TOKENIZED_FIELD_SUFFIX, $fieldValue);
+        $values = explode(' ', $fieldValue);
+        $queries = array_map(function ($value) use ($fieldName) {
+            return sprintf('(%s:"%s")', $fieldName, $value);
+        }, $values);
+
+        return implode(' AND ', $queries);
     }
 }

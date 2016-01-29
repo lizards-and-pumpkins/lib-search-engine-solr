@@ -10,6 +10,7 @@ use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
+use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
@@ -45,6 +46,25 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         );
     }
 
+    /**
+     * @param SortOrderConfig $sortOrderConfig
+     * @return QueryOptions|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private function createStubQueryOptions(SortOrderConfig $sortOrderConfig)
+    {
+        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
+
+        $stubQueryOptions = $this->getMock(QueryOptions::class, [], [], '', false);
+        $stubQueryOptions->method('getFilterSelection')->willReturn([]);
+        $stubQueryOptions->method('getContext')->willReturn($this->createTestContext());
+        $stubQueryOptions->method('getFacetFiltersToIncludeInResult')->willReturn($facetFiltersToIncludeInResult);
+        $stubQueryOptions->method('getRowsPerPage')->willReturn(100);
+        $stubQueryOptions->method('getPageNumber')->willReturn(0);
+        $stubQueryOptions->method('getSortOrderConfig')->willReturn($sortOrderConfig);
+
+        return $stubQueryOptions;
+    }
+
     protected function tearDown()
     {
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
@@ -63,13 +83,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $client = new CurlSolrHttpClient($testSolrConnectionPath);
 
-        $testSearchableAttributes = ['foo', 'baz'];
-
-        return new SolrSearchEngine(
-            $client,
-            $testSearchableAttributes,
-            $facetFieldTransformationRegistry
-        );
+        return new SolrSearchEngine($client, $facetFieldTransformationRegistry);
     }
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
@@ -81,26 +95,12 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchEngine = $this->createSearchEngineInstance($facetFieldTransformationRegistry);
 
         $searchCriteria = SearchCriterionEqual::create($nonExistingFieldCode, $fieldValue);
+        $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortOrderDirection::ASC);
 
         $expectedExceptionMessage = sprintf('undefined field %s', $nonExistingFieldCode);
         $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
 
-        $filterSelection = [];
-        $context = $this->createTestContext();
-        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult;
-        $rowsPerPage = 100;
-        $pageNumber = 0;
-        $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortOrderDirection::ASC);
-
-        $searchEngine->query(
-            $searchCriteria,
-            $filterSelection,
-            $context,
-            $facetFiltersToIncludeInResult,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
-        );
+        $searchEngine->query($searchCriteria, $this->createStubQueryOptions($sortOrderConfig));
     }
 
     public function testExceptionIsThrownIfSolrIsNotAccessible()
@@ -111,34 +111,16 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $testSolrConnectionPath = 'http://localhost:8983/solr/nonexistingcore/';
         $client = new CurlSolrHttpClient($testSolrConnectionPath);
 
-        $testSearchableAttributes = ['foo', 'baz'];
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
-        $searchEngine = new SolrSearchEngine(
-            $client,
-            $testSearchableAttributes,
-            $facetFieldTransformationRegistry
-        );
+        $searchEngine = new SolrSearchEngine($client, $facetFieldTransformationRegistry);
 
         $expectedExceptionMessage = 'Error 404 Not Found';
         $this->setExpectedException(SolrConnectionException::class, $expectedExceptionMessage);
 
         $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
-        $filterSelection = [];
-        $context = $this->createTestContext();
-        $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult;
-        $rowsPerPage = 100;
-        $pageNumber = 0;
         $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->query(
-            $searchCriteria,
-            $filterSelection,
-            $context,
-            $facetFiltersToIncludeInResult,
-            $rowsPerPage,
-            $pageNumber,
-            $sortOrderConfig
-        );
+        $searchEngine->query($searchCriteria, $this->createStubQueryOptions($sortOrderConfig));
     }
 }
