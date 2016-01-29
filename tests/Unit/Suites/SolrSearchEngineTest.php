@@ -22,7 +22,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngineResponse;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
 use LizardsAndPumpkins\Product\AttributeCode;
 use LizardsAndPumpkins\Product\ProductId;
-use \PHPUnit_Framework_MockObject_MockObject as MockObject;
+use PHPUnit_Framework_MockObject_MockObject as MockObject;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
