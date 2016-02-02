@@ -11,6 +11,8 @@ use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
+use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
+use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
@@ -83,7 +85,9 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $client = new CurlSolrHttpClient($testSolrConnectionPath);
 
-        return new SolrSearchEngine($client, $facetFieldTransformationRegistry);
+        $globalProductListingCriteria = SearchCriterionAnything::create();
+
+        return new SolrSearchEngine($client, $globalProductListingCriteria, $facetFieldTransformationRegistry);
     }
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
@@ -113,7 +117,10 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
-        $searchEngine = new SolrSearchEngine($client, $facetFieldTransformationRegistry);
+        /** @var SearchCriteria|\PHPUnit_Framework_MockObject_MockObject $stubCriteria */
+        $stubCriteria = $this->getMock(SearchCriteria::class);
+
+        $searchEngine = new SolrSearchEngine($client, $stubCriteria, $facetFieldTransformationRegistry);
 
         $expectedExceptionMessage = 'Error 404 Not Found';
         $this->setExpectedException(SolrConnectionException::class, $expectedExceptionMessage);
