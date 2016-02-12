@@ -44,8 +44,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
      */
     public function testExceptionIsThrownIfNumberOfRowsPerPageIsNonInteger($invalidNumberOfRowsPerPage)
     {
-        $this->setExpectedException(
-            \InvalidArgumentException::class,
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
             sprintf('Number of rows per page must be an integer, got "%s".', gettype($invalidNumberOfRowsPerPage))
         );
 
@@ -66,8 +66,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
      */
     public function testExceptionIsThrownIfNumberOfRowsPerPageIsNotPositive($invalidNumberOfRowsPerPage)
     {
-        $this->setExpectedException(
-            \InvalidArgumentException::class,
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
             sprintf('Number of rows per page must be greater than zero, got "%s".', $invalidNumberOfRowsPerPage)
         );
 
@@ -88,8 +88,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
      */
     public function testExceptionIsThrownIfCurrentPageNumberIsNonInteger($invalidCurrentPageNumber)
     {
-        $this->setExpectedException(
-            \InvalidArgumentException::class,
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
             sprintf('Current page number must be an integer, got "%s".', gettype($invalidCurrentPageNumber))
         );
 
@@ -109,8 +109,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $rowsPerPage = 10;
         $pageNumber = -1;
 
-        $this->setExpectedException(
-            \InvalidArgumentException::class,
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(
             sprintf('Current page number must be greater or equal to zero, got "%s".', $pageNumber)
         );
 
@@ -150,7 +150,7 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
 
     public function testExceptionIsThrownIfSolrOperationIsUnknown()
     {
-        $this->setExpectedException(UnsupportedSearchCriteriaOperationException::class);
+        $this->expectException(UnsupportedSearchCriteriaOperationException::class);
 
         $criteriaAsArray = [
             'fieldName' => 'foo',

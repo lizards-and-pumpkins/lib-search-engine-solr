@@ -97,8 +97,8 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchCriteria = SearchCriterionEqual::create($nonExistingFieldCode, $fieldValue);
         $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortOrderDirection::ASC);
 
-        $expectedExceptionMessage = sprintf('undefined field %s', $nonExistingFieldCode);
-        $this->setExpectedException(SolrException::class, $expectedExceptionMessage);
+        $this->expectException(SolrException::class);
+        $this->expectExceptionMessage(sprintf('undefined field %s', $nonExistingFieldCode));
 
         $searchEngine->query($searchCriteria, $this->createStubQueryOptions($sortOrderConfig));
     }
@@ -115,8 +115,8 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $searchEngine = new SolrSearchEngine($client, $facetFieldTransformationRegistry);
 
-        $expectedExceptionMessage = 'Error 404 Not Found';
-        $this->setExpectedException(SolrConnectionException::class, $expectedExceptionMessage);
+        $this->expectException(SolrConnectionException::class);
+        $this->expectExceptionMessage('Error 404 Not Found');
 
         $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
         $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortOrderDirection::ASC);
