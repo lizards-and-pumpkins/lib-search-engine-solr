@@ -139,8 +139,8 @@ class SolrQuery
      */
     private static function createPrimitiveOperationQueryString(array $criteria)
     {
-        $fieldName = $criteria['fieldName'];
-        $fieldValue = $criteria['fieldValue'];
+        $fieldName = self::escapeQueryChars($criteria['fieldName']);
+        $fieldValue = self::escapeQueryChars($criteria['fieldValue']);
         $operator = self::getSolrOperator($criteria['operation']);
 
         return $operator->getFormattedQueryString($fieldName, $fieldValue);
@@ -170,7 +170,9 @@ class SolrQuery
     private static function convertContextIntoQueryString(Context $context)
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $contextCode, $context->getValue($contextCode));
+            $fieldName = self::escapeQueryChars($contextCode);
+            $fieldValue = self::escapeQueryChars($context->getValue($contextCode));
+            return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
         }, $context->getSupportedCodes()));
     }
 
@@ -190,5 +192,20 @@ class SolrQuery
                 sprintf('Current page number must be greater or equal to zero, got "%s".', $pageNumber)
             );
         }
+    }
+
+    /**
+     * @param string $queryString
+     * @return string
+     */
+    private static function escapeQueryChars($queryString)
+    {
+        $src = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '~', '*', '?', ':', '"', ';', '/'];
+
+        $replace = array_map(function ($string) {
+            return '\\' . $string;
+        }, $src);
+
+        return str_replace($src, $replace, $queryString);
     }
 }

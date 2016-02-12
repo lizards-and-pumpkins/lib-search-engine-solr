@@ -216,4 +216,50 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame($expectedQueryParametersArray, $query->toArray());
     }
+
+    public function testQueryStringIsEscaped()
+    {
+        $criteriaAsArray = [
+            'condition' => CompositeSearchCriterion::OR_CONDITION,
+            'criteria' => [
+                [
+                    'operation' => 'Equal',
+                    'fieldName' => 'fo/o',
+                    'fieldValue' => 'ba\r',
+                ],
+                [
+                    'operation' => 'Equal',
+                    'fieldName' => 'baz',
+                    'fieldValue' => '[]',
+                ],
+            ]
+        ];
+        $this->stubCriteria->method('jsonSerialize')->willReturn($criteriaAsArray);
+
+        $this->stubContext->method('getSupportedCodes')->willReturn(['qu+x']);
+        $this->stubContext->method('getValue')->willReturnMap([['qu+x', 2]]);
+
+        $rowsPerPage = 10;
+        $pageNumber = 2;
+
+        $this->stubSortOrderConfig->method('getAttributeCode')->willReturn('foo');
+        $this->stubSortOrderConfig->method('getSelectedDirection')->willReturn(SortOrderDirection::ASC);
+
+        $query = SolrQuery::create(
+            $this->stubCriteria,
+            $this->stubContext,
+            $rowsPerPage,
+            $pageNumber,
+            $this->stubSortOrderConfig
+        );
+
+        $expectedQueryParametersArray = [
+            'q' => '((fo\/o:"ba\\\\r" OR baz:"\[\]")) AND ((-qu\+x:[* TO *] AND *:*) OR qu\+x:"2")',
+            'rows' => $rowsPerPage,
+            'start' => $rowsPerPage * $pageNumber,
+            'sort' => 'foo asc',
+        ];
+
+        $this->assertSame($expectedQueryParametersArray, $query->toArray());
+    }
 }
