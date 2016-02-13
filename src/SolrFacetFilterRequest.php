@@ -16,7 +16,7 @@ class SolrFacetFilterRequest
     private $facetFiltersToIncludeInResult;
 
     /**
-     * @var string[]
+     * @var array[]
      */
     private $filterSelection;
 
@@ -27,7 +27,7 @@ class SolrFacetFilterRequest
 
     /**
      * @param FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
-     * @param string[] $filterSelection
+     * @param array[] $filterSelection
      * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
      */
     public function __construct(
@@ -104,7 +104,7 @@ class SolrFacetFilterRequest
     }
 
     /**
-     * @param string[] $filterSelection
+     * @param array[] $filterSelection
      * @return string[]
      */
     private function getSelectedFacetQueries(array $filterSelection)

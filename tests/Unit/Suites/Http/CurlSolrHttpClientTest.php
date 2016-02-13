@@ -109,8 +109,8 @@ class CurlSolrHttpClientTest extends \PHPUnit_Framework_TestCase
     {
         self::$returnType = 'html';
 
-        $expectedExceptionMessage = 'Error 404 Not Found';
-        $this->setExpectedException(SolrConnectionException::class, $expectedExceptionMessage);
+        $this->expectException(SolrConnectionException::class);
+        $this->expectExceptionMessage('Error 404 Not Found');
 
         $parameters = [];
         $this->client->update($parameters);
@@ -154,8 +154,8 @@ class CurlSolrHttpClientTest extends \PHPUnit_Framework_TestCase
     {
         self::$returnType = 'html';
 
-        $expectedExceptionMessage = 'Error 404 Not Found';
-        $this->setExpectedException(SolrConnectionException::class, $expectedExceptionMessage);
+        $this->expectException(SolrConnectionException::class);
+        $this->expectExceptionMessage('Error 404 Not Found');
 
         $parameters = [];
         $this->client->select($parameters);

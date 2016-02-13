@@ -31,7 +31,8 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
         $testErrorMessage = 'Test error message.';
         $responseArray = ['error' => ['msg' => $testErrorMessage]];
 
-        $this->setExpectedException(SolrException::class, $testErrorMessage);
+        $this->expectException(SolrException::class);
+        $this->expectExceptionMessage($testErrorMessage);
 
         SolrResponse::fromSolrResponseArray($responseArray, $this->stubFacetFieldTransformationRegistry);
     }
@@ -141,7 +142,7 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
 
     public function testExceptionIsThrownIfNoTransformationIsRegisteredForFacetField()
     {
-        $this->setExpectedException(NoFacetFieldTransformationRegisteredException::class);
+        $this->expectException(NoFacetFieldTransformationRegisteredException::class);
 
         $attributeCodeString = 'price';
         $attributeValueFrom = '*';
