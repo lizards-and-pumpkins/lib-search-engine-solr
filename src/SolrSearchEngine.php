@@ -63,14 +63,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     public function query(SearchCriteria $criteria, QueryOptions $queryOptions)
     {
+        $query =  new SolrQuery($criteria, $queryOptions);
+
         $facetFiltersToIncludeInResult = $queryOptions->getFacetFiltersToIncludeInResult();
         $filterSelection = $queryOptions->getFilterSelection();
-        $context = $queryOptions->getContext();
-        $rowsPerPage = $queryOptions->getRowsPerPage();
-        $pageNumber = $queryOptions->getPageNumber();
-        $sortOrderConfig = $queryOptions->getSortOrderConfig();
-
-        $query = SolrQuery::create($criteria, $context, $rowsPerPage, $pageNumber, $sortOrderConfig);
 
         $facetFilterRequest = new SolrFacetFilterRequest(
             $facetFiltersToIncludeInResult,

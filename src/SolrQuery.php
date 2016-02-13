@@ -2,8 +2,8 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
-use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderConfig;
 use LizardsAndPumpkins\Context\Context;
+use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
@@ -11,95 +11,57 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
 class SolrQuery
 {
     /**
-     * @var string
+     * @var SearchCriteria
      */
-    private $queryString;
+    private $criteria;
 
     /**
-     * @var int
+     * @var QueryOptions
      */
-    private $rowsPerPage;
+    private $queryOptions;
 
     /**
-     * @var int
+     * @var string[]
      */
-    private $offest;
+    private $memoizedSolrQueryArrayRepresentation;
 
-    /**
-     * @var string
-     */
-    private $sortOrderString;
-
-    /**
-     * @param string $queryString
-     * @param int $rowsPerPage
-     * @param int $offset
-     * @param string $sortOrderString
-     */
-    private function __construct($queryString, $rowsPerPage, $offset, $sortOrderString)
+    public function __construct(SearchCriteria $criteria, QueryOptions $queryOptions)
     {
-        $this->queryString = $queryString;
-        $this->rowsPerPage = $rowsPerPage;
-        $this->offest = $offset;
-        $this->sortOrderString = $sortOrderString;
+        $this->criteria = $criteria;
+        $this->queryOptions = $queryOptions;
     }
 
     /**
-     * @param SearchCriteria $criteria
-     * @param Context $context
-     * @param int $rowsPerPage
-     * @param int $pageNumber
-     * @param SortOrderConfig $sortOrderConfig
-     * @return SolrQuery
-     */
-    public static function create(
-        SearchCriteria $criteria,
-        Context $context,
-        $rowsPerPage,
-        $pageNumber,
-        SortOrderConfig $sortOrderConfig
-    ) {
-        self::validateNumberOfRowsPerPage($rowsPerPage);
-        self::validateCurrentPageNumber($pageNumber);
-
-        $fieldsQueryString = self::convertCriteriaIntoSolrQueryString($criteria);
-        $contextQueryString = self::convertContextIntoQueryString($context);
-
-        $queryString = sprintf('(%s) AND %s', $fieldsQueryString, $contextQueryString);
-        $offset = $pageNumber * $rowsPerPage;
-        $sortOrderString = $sortOrderConfig->getAttributeCode() . ' ' . $sortOrderConfig->getSelectedDirection();
-
-        return new self($queryString, $rowsPerPage, $offset, $sortOrderString);
-    }
-
-    /**
-     * @param int $rowsPerPage
-     */
-    private static function validateNumberOfRowsPerPage($rowsPerPage)
-    {
-        if (!is_int($rowsPerPage)) {
-            throw new \InvalidArgumentException(
-                sprintf('Number of rows per page must be an integer, got "%s".', gettype($rowsPerPage))
-            );
-        }
-
-        if ($rowsPerPage < 1) {
-            throw new \InvalidArgumentException(
-                sprintf('Number of rows per page must be greater than zero, got "%s".', $rowsPerPage)
-            );
-        }
-    }
-
-    /**
-     * @return string
+     * @return string[]
      */
     public function toArray()
     {
+        if (null === $this->memoizedSolrQueryArrayRepresentation) {
+            $this->memoizedSolrQueryArrayRepresentation = $this->getSolrQueryArrayRepresentation();
+        }
+
+        return $this->memoizedSolrQueryArrayRepresentation;
+    }
+
+    /**
+     * @return string[]
+     */
+    protected function getSolrQueryArrayRepresentation()
+    {
+        $fieldsQueryString = $this->convertCriteriaIntoSolrQueryString($this->criteria);
+        $contextQueryString = $this->convertContextIntoQueryString($this->queryOptions->getContext());
+
+        $queryString = sprintf('(%s) AND %s', $fieldsQueryString, $contextQueryString);
+        $rowsPerPage = $this->queryOptions->getRowsPerPage();
+        $offset = $this->queryOptions->getPageNumber() * $rowsPerPage;
+        $sortOrderConfig = $this->queryOptions->getSortOrderConfig();
+        $sortOrderString = $sortOrderConfig->getAttributeCode() . ' ' . $sortOrderConfig->getSelectedDirection();
+
         return [
-            'q' => $this->queryString,
-            'rows' => $this->rowsPerPage,
-            'start' => $this->offest,
-            'sort' => $this->sortOrderString,
+            'q'     => $queryString,
+            'rows'  => $rowsPerPage,
+            'start' => $offset,
+            'sort'  => $sortOrderString,
         ];
     }
 
@@ -107,41 +69,38 @@ class SolrQuery
      * @param SearchCriteria $criteria
      * @return string
      */
-    private static function convertCriteriaIntoSolrQueryString(SearchCriteria $criteria)
+    private function convertCriteriaIntoSolrQueryString(SearchCriteria $criteria)
     {
         $criteriaJson = json_encode($criteria);
         $criteriaArray = json_decode($criteriaJson, true);
 
-        return self::createSolrQueryStringFromCriteriaArray($criteriaArray);
+        return $this->createSolrQueryStringFromCriteriaArray($criteriaArray);
     }
 
     /**
      * @param mixed[] $criteria
      * @return string
      */
-    private static function createSolrQueryStringFromCriteriaArray(array $criteria)
+    private function createSolrQueryStringFromCriteriaArray(array $criteria)
     {
         if (isset($criteria['condition'])) {
-            $subCriteriaQueries = array_map(
-                [SolrQuery::class, 'createSolrQueryStringFromCriteriaArray'],
-                $criteria['criteria']
-            );
+            $subCriteriaQueries = array_map([$this, 'createSolrQueryStringFromCriteriaArray'], $criteria['criteria']);
             $glue = ' ' . strtoupper($criteria['condition']) . ' ';
             return '(' . implode($glue, $subCriteriaQueries) . ')';
         }
 
-        return self::createPrimitiveOperationQueryString($criteria);
+        return $this->createPrimitiveOperationQueryString($criteria);
     }
 
     /**
      * @param string[] $criteria
      * @return string
      */
-    private static function createPrimitiveOperationQueryString(array $criteria)
+    private function createPrimitiveOperationQueryString(array $criteria)
     {
-        $fieldName = self::escapeQueryChars($criteria['fieldName']);
-        $fieldValue = self::escapeQueryChars($criteria['fieldValue']);
-        $operator = self::getSolrOperator($criteria['operation']);
+        $fieldName = $this->escapeQueryChars($criteria['fieldName']);
+        $fieldValue = $this->escapeQueryChars($criteria['fieldValue']);
+        $operator = $this->getSolrOperator($criteria['operation']);
 
         return $operator->getFormattedQueryString($fieldName, $fieldValue);
     }
@@ -150,7 +109,7 @@ class SolrQuery
      * @param string $operation
      * @return SolrQueryOperator
      */
-    private static function getSolrOperator($operation)
+    private function getSolrOperator($operation)
     {
         $className = __NAMESPACE__ . '\\Operator\\SolrQueryOperator' . $operation;
 
@@ -167,38 +126,20 @@ class SolrQuery
      * @param Context $context
      * @return string
      */
-    private static function convertContextIntoQueryString(Context $context)
+    private function convertContextIntoQueryString(Context $context)
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
-            $fieldName = self::escapeQueryChars($contextCode);
-            $fieldValue = self::escapeQueryChars($context->getValue($contextCode));
+            $fieldName = $this->escapeQueryChars($contextCode);
+            $fieldValue = $this->escapeQueryChars($context->getValue($contextCode));
             return sprintf('((-%1$s:[* TO *] AND *:*) OR %1$s:"%2$s")', $fieldName, $fieldValue);
         }, $context->getSupportedCodes()));
-    }
-
-    /**
-     * @param int $pageNumber
-     */
-    private static function validateCurrentPageNumber($pageNumber)
-    {
-        if (!is_int($pageNumber)) {
-            throw new \InvalidArgumentException(
-                sprintf('Current page number must be an integer, got "%s".', gettype($pageNumber))
-            );
-        }
-
-        if ($pageNumber < 0) {
-            throw new \InvalidArgumentException(
-                sprintf('Current page number must be greater or equal to zero, got "%s".', $pageNumber)
-            );
-        }
     }
 
     /**
      * @param string $queryString
      * @return string
      */
-    private static function escapeQueryChars($queryString)
+    private function escapeQueryChars($queryString)
     {
         $src = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '~', '*', '?', ':', '"', ';', '/'];
 
