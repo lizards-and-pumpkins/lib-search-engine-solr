@@ -21,7 +21,7 @@ class SolrQuery
     private $queryOptions;
 
     /**
-     * @var string[]
+     * @var mixed[]
      */
     private $memoizedSolrQueryArrayRepresentation;
 
@@ -44,7 +44,7 @@ class SolrQuery
     }
 
     /**
-     * @return string[]
+     * @return mixed[]
      */
     private function getSolrQueryArrayRepresentation()
     {
