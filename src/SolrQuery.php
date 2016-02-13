@@ -46,7 +46,7 @@ class SolrQuery
     /**
      * @return string[]
      */
-    protected function getSolrQueryArrayRepresentation()
+    private function getSolrQueryArrayRepresentation()
     {
         $fieldsQueryString = $this->convertCriteriaIntoSolrQueryString($this->criteria);
         $contextQueryString = $this->convertContextIntoQueryString($this->queryOptions->getContext());
