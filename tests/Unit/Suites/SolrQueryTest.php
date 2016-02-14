@@ -52,9 +52,9 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $this->solrQuery->toArray();
     }
 
-    public function testArrayRepresentationOfQueryIsReturned()
+    public function testArrayRepresentationOfQueryContainsFormattedQueryString()
     {
-        $this->stubCriteria->method('jsonSerialize')->willReturn([
+        $this->stubCriteria->expects($this->once())->method('jsonSerialize')->willReturn([
             'condition' => CompositeSearchCriterion::OR_CONDITION,
             'criteria' => [
                 [
@@ -73,27 +73,94 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext = $this->getMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn(['qux']);
         $stubContext->method('getValue')->willReturnMap([['qux', 2]]);
-
-        $rowsPerPage = 10;
-        $pageNumber = 2;
+        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
         $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
-        $stubSortOrderConfig->method('getAttributeCode')->willReturn('foo');
-        $stubSortOrderConfig->method('getSelectedDirection')->willReturn(SortOrderDirection::ASC);
-
-        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
-        $this->stubQueryOptions->method('getRowsPerPage')->willReturn($rowsPerPage);
-        $this->stubQueryOptions->method('getPageNumber')->willReturn($pageNumber);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
-        $expectedQueryParametersArray = [
-            'q' => '((foo:"bar" OR baz:[1 TO *])) AND ((-qux:[* TO *] AND *:*) OR qux:"2")',
-            'rows' => $rowsPerPage,
-            'start' => $rowsPerPage * $pageNumber,
-            'sort' => 'foo asc',
-        ];
+        $result = $this->solrQuery->toArray();
+        $expectedQueryString = '((foo:"bar" OR baz:[1 TO *])) AND ((-qux:[* TO *] AND *:*) OR qux:"2")';
 
-        $this->assertSame($expectedQueryParametersArray, $this->solrQuery->toArray());
+        $this->assertArrayHasKey('q', $result);
+        $this->assertSame($expectedQueryString, $result['q']);
+    }
+
+    public function testArrayRepresentationOfQueryContainsNumberOdRowsPerPage()
+    {
+        $this->stubCriteria->expects($this->once())->method('jsonSerialize')->willReturn([
+            'fieldName' => 'foo',
+            'fieldValue' => 'bar',
+            'operation' => 'Equal'
+        ]);
+
+        $stubContext = $this->getMock(Context::class);
+        $stubContext->method('getSupportedCodes')->willReturn([]);
+        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
+
+        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+
+        $rowsPerPage = 10;
+        $this->stubQueryOptions->method('getRowsPerPage')->willReturn($rowsPerPage);
+
+        $result = $this->solrQuery->toArray();
+
+        $this->assertArrayHasKey('rows', $result);
+        $this->assertSame($rowsPerPage, $result['rows']);
+    }
+
+    public function testArrayRepresentationOfQueryContainsSearchResultsOffset()
+    {
+        $this->stubCriteria->expects($this->once())->method('jsonSerialize')->willReturn([
+            'fieldName' => 'foo',
+            'fieldValue' => 'bar',
+            'operation' => 'Equal'
+        ]);
+
+        $stubContext = $this->getMock(Context::class);
+        $stubContext->method('getSupportedCodes')->willReturn([]);
+        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
+
+        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+
+        $rowsPerPage = 10;
+        $this->stubQueryOptions->method('getRowsPerPage')->willReturn($rowsPerPage);
+
+        $pageNumber = 2;
+        $this->stubQueryOptions->method('getPageNumber')->willReturn($pageNumber);
+
+        $result = $this->solrQuery->toArray();
+
+        $this->assertArrayHasKey('start', $result);
+        $this->assertSame($rowsPerPage * $pageNumber, $result['start']);
+    }
+
+    public function testArrayRepresentationOfQueryContainsSortOrderString()
+    {
+        $this->stubCriteria->expects($this->once())->method('jsonSerialize')->willReturn([
+            'fieldName' => 'foo',
+            'fieldValue' => 'bar',
+            'operation' => 'Equal'
+        ]);
+
+        $stubContext = $this->getMock(Context::class);
+        $stubContext->method('getSupportedCodes')->willReturn([]);
+        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
+
+        $sortAttributeCode = 'baz';
+        $sortDirection = SortOrderDirection::ASC;
+
+        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig->method('getAttributeCode')->willReturn($sortAttributeCode);
+        $stubSortOrderConfig->method('getSelectedDirection')->willReturn($sortDirection);
+        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+
+        $result = $this->solrQuery->toArray();
+        $expectedSortOrderString = sprintf('%s%s %s', $sortAttributeCode, SolrQuery::SORTING_SUFFIX, $sortDirection);
+
+        $this->assertArrayHasKey('sort', $result);
+        $this->assertSame($expectedSortOrderString, $result['sort']);
     }
 
     public function testQueryStringIsEscaped()
@@ -117,27 +184,15 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext = $this->getMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn(['qu+x']);
         $stubContext->method('getValue')->willReturnMap([['qu+x', 2]]);
-
-        $rowsPerPage = 10;
-        $pageNumber = 2;
+        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
         $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
-        $stubSortOrderConfig->method('getAttributeCode')->willReturn('foo');
-        $stubSortOrderConfig->method('getSelectedDirection')->willReturn(SortOrderDirection::ASC);
-
-        $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
-        $this->stubQueryOptions->method('getRowsPerPage')->willReturn($rowsPerPage);
-        $this->stubQueryOptions->method('getPageNumber')->willReturn($pageNumber);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
-        $expectedQueryParametersArray = [
-            'q' => '((fo\/o:"ba\\\\r" OR baz:"\[\]")) AND ((-qu\+x:[* TO *] AND *:*) OR qu\+x:"2")',
-            'rows' => $rowsPerPage,
-            'start' => $rowsPerPage * $pageNumber,
-            'sort' => 'foo asc',
-        ];
+        $result = $this->solrQuery->toArray();
+        $expectedQueryString = '((fo\/o:"ba\\\\r" OR baz:"\[\]")) AND ((-qu\+x:[* TO *] AND *:*) OR qu\+x:"2")';
 
-        $this->assertSame($expectedQueryParametersArray, $this->solrQuery->toArray());
+        $this->assertSame($expectedQueryString, $result['q']);
     }
 
     public function testArrayRepresentationOfSolrQueryIsMemoized()

@@ -2,6 +2,7 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
+use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderConfig;
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
@@ -10,6 +11,8 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
 
 class SolrQuery
 {
+    const SORTING_SUFFIX = '_sort';
+
     /**
      * @var SearchCriteria
      */
@@ -54,8 +57,7 @@ class SolrQuery
         $queryString = sprintf('(%s) AND %s', $fieldsQueryString, $contextQueryString);
         $rowsPerPage = $this->queryOptions->getRowsPerPage();
         $offset = $this->queryOptions->getPageNumber() * $rowsPerPage;
-        $sortOrderConfig = $this->queryOptions->getSortOrderConfig();
-        $sortOrderString = $sortOrderConfig->getAttributeCode() . ' ' . $sortOrderConfig->getSelectedDirection();
+        $sortOrderString = $this->getSortOrderString($this->queryOptions->getSortOrderConfig());
 
         return [
             'q'     => $queryString,
@@ -148,5 +150,19 @@ class SolrQuery
         }, $src);
 
         return str_replace($src, $replace, $queryString);
+    }
+
+    /**
+     * @param SortOrderConfig $sortOrderConfig
+     * @return string
+     */
+    private function getSortOrderString(SortOrderConfig $sortOrderConfig)
+    {
+        return sprintf(
+            '%s%s %s',
+            $sortOrderConfig->getAttributeCode(),
+            self::SORTING_SUFFIX,
+            $sortOrderConfig->getSelectedDirection()
+        );
     }
 }
