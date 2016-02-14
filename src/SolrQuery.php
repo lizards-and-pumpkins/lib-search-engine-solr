@@ -60,10 +60,10 @@ class SolrQuery
         $sortOrderString = $this->getSortOrderString($this->queryOptions->getSortOrderConfig());
 
         return [
-            'q'     => $queryString,
-            'rows'  => $rowsPerPage,
+            'q' => $queryString,
+            'rows' => $rowsPerPage,
             'start' => $offset,
-            'sort'  => $sortOrderString,
+            'sort' => $sortOrderString,
         ];
     }
 
