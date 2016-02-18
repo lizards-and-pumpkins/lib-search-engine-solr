@@ -27,4 +27,16 @@ class SolrQueryOperatorLikeTest extends AbstractSolrQueryOperatorTest
 
         return implode(' AND ', $queries);
     }
+
+    public function testNoEmptyCriteriaIsCreateFromSpacesSurroundingFieldValue()
+    {
+        $fieldName = 'foo';
+        $fieldValue = ' bar ';
+
+        $operator = $this->getOperatorInstance();
+        $result = $operator->getFormattedQueryString($fieldName, $fieldValue);
+        $expectedQueryString = sprintf('(%s:"%s")', $fieldName, trim($fieldValue));
+
+        $this->assertSame($expectedQueryString, $result);
+    }
 }
