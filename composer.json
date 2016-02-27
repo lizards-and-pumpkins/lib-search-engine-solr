@@ -1,6 +1,5 @@
 {
     "name": "lizards-and-pumpkins/lib-search-engine-solr",
-    "version": "dev-master",
     "description": "Lizards & Pumpkins Solr search engine module",
     "license": "BSD-3-Clause",
     "authors": [
