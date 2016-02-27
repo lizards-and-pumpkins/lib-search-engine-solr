@@ -37,11 +37,6 @@ class SolrSearchEngine implements SearchEngine, Clearable
      */
     private $facetFieldTransformationRegistry;
 
-    /**
-     * @param SolrHttpClient $client
-     * @param SearchCriteria $globalProductListingCriteria
-     * @param FacetFieldTransformationRegistry $facetFieldTransformationRegistry
-     */
     public function __construct(
         SolrHttpClient $client,
         SearchCriteria $globalProductListingCriteria,

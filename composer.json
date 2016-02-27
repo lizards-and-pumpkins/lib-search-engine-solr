@@ -32,7 +32,7 @@
     "repositories": [
         {
             "type": "composer",
-            "url": "http://packages.lizardsandpumpkins.com"
+            "url": "https://packages.lizardsandpumpkins.com"
         }
     ],
     "scripts": {
