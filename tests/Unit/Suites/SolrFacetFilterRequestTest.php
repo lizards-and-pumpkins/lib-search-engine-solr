@@ -101,6 +101,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $expectedArray = [
             'facet' => 'on',
             'facet.mincount' => 1,
+            'facet.limit' => -1,
             'facet.sort' => 'index',
             'facet.field' => [$testAttributeCode],
             'facet.query' => [],
@@ -130,6 +131,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $expectedArray = [
             'facet' => 'on',
             'facet.mincount' => 1,
+            'facet.limit' => -1,
             'facet.sort' => 'index',
             'facet.field' => [],
             'facet.query' => [sprintf('%s:[%s TO %s]', $testAttributeCode, '*', 10)],
@@ -157,6 +159,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $expectedArray = [
             'facet' => 'on',
             'facet.mincount' => 1,
+            'facet.limit' => -1,
             'facet.sort' => 'index',
             'facet.field' => ['foo'],
             'facet.query' => [],
@@ -194,6 +197,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $expectedArray = [
             'facet' => 'on',
             'facet.mincount' => 1,
+            'facet.limit' => -1,
             'facet.sort' => 'index',
             'facet.field' => ['foo'],
             'facet.query' => [],
