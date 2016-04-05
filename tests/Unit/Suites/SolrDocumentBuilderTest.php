@@ -5,7 +5,7 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 use LizardsAndPumpkins\Context\SelfContainedContext;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldCollection;
-use LizardsAndPumpkins\Product\ProductId;
+use LizardsAndPumpkins\Import\Product\ProductId;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrDocumentBuilder
