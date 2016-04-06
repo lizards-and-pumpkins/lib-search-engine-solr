@@ -2,15 +2,13 @@
 
 namespace LizardsAndPumpkins;
 
-use LizardsAndPumpkins\ContentDelivery\Catalog\Search\FacetFieldTransformation\FacetFieldTransformationRegistry;
-use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderConfig;
-use LizardsAndPumpkins\ContentDelivery\Catalog\SortOrderDirection;
 use LizardsAndPumpkins\Context\Context;
-use LizardsAndPumpkins\Context\ContextBuilder;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
-use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
+use LizardsAndPumpkins\DataPool\AbstractSearchEngineTest;
+use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
-use LizardsAndPumpkins\DataPool\SearchEngine\QueryOptions;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderDirection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
@@ -19,8 +17,10 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\CurlSolrHttpClient;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\Exception\SolrConnectionException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine;
-use LizardsAndPumpkins\Product\AttributeCode;
-use LizardsAndPumpkins\Utils\Clearable;
+use LizardsAndPumpkins\Import\Product\AttributeCode;
+use LizardsAndPumpkins\ProductSearch\QueryOptions;
+use LizardsAndPumpkins\Util\Config\EnvironmentConfigReader;
+use LizardsAndPumpkins\Util\Storage\Clearable;
 
 class SolrSearchEngineTest extends AbstractSearchEngineTest
 {
