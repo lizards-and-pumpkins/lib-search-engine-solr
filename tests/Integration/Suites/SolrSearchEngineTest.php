@@ -4,7 +4,7 @@ namespace LizardsAndPumpkins;
 
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
-use LizardsAndPumpkins\DataPool\AbstractSearchEngineTest;
+use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
