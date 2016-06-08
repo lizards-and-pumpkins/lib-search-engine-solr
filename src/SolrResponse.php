@@ -172,32 +172,28 @@ class SolrResponse
         $queries = array_keys($facetQueries);
 
         return array_reduce($queries, function (array $carry, $query) use ($facetQueries, $attributeCodes) {
-            if (preg_match('/^(.*):\[(.*) TO (.*)\]$/', $query, $matches)) {
-                $attributeCode = $matches[1];
-
-                if (in_array($attributeCode, $attributeCodes)) {
+            if (preg_match('/^(?<attributeCode>.*):\[(?<from>.*) TO (?<to>.*)\]$/', $query, $matches)) {
+                if (in_array($matches['attributeCode'], $attributeCodes)) {
                     return $carry;
                 }
 
-                $value = $this->encodeFilterRange($attributeCode, $matches[2], $matches[3]);
+                $value = $this->encodeFilterRange($matches['attributeCode'], $matches['from'], $matches['to']);
                 $count = $facetQueries[$query];
 
-                $carry[$attributeCode][$value] = $count;
+                $carry[$matches['attributeCode']][$value] = $count;
 
                 return $carry;
             }
 
-            if (preg_match('/^(.*):\((.*)\)$/', $query, $matches)) {
-                $attributeCode = $matches[1];
-
-                if (in_array($attributeCode, $attributeCodes)) {
+            if (preg_match('/^(?<attributeCode>.*):\((?<value>.*)\)$/', $query, $matches)) {
+                if (in_array($matches['attributeCode'], $attributeCodes)) {
                     return $carry;
                 }
 
-                $value = $this->encodeFilter($attributeCode, $matches[2]);
+                $value = $this->encodeFilter($matches['attributeCode'], $matches['value']);
                 $count = $facetQueries[$query];
 
-                $carry[$attributeCode][$value] = $count;
+                $carry[$matches['attributeCode']][$value] = $count;
 
                 return $carry;
             }
