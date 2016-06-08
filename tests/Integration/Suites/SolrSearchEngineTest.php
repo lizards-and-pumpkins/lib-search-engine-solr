@@ -56,7 +56,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
     {
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
 
-        $stubQueryOptions = $this->getMock(QueryOptions::class, [], [], '', false);
+        $stubQueryOptions = $this->createMock(QueryOptions::class);
         $stubQueryOptions->method('getFilterSelection')->willReturn([]);
         $stubQueryOptions->method('getContext')->willReturn($this->createTestContext());
         $stubQueryOptions->method('getFacetFiltersToIncludeInResult')->willReturn($facetFiltersToIncludeInResult);
@@ -118,7 +118,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
         /** @var SearchCriteria|\PHPUnit_Framework_MockObject_MockObject $stubCriteria */
-        $stubCriteria = $this->getMock(SearchCriteria::class);
+        $stubCriteria = $this->createMock(SearchCriteria::class);
 
         $searchEngine = new SolrSearchEngine($client, $stubCriteria, $facetFieldTransformationRegistry);
 

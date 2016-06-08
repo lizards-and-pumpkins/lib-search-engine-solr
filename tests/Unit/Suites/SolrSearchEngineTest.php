@@ -66,10 +66,10 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
      */
     private function createStubSortOrderConfig($sortByFieldCode, $sortDirection)
     {
-        $stubAttributeCode = $this->getMock(AttributeCode::class, [], [], '', false);
+        $stubAttributeCode = $this->createMock(AttributeCode::class);
         $stubAttributeCode->method('__toString')->willReturn($sortByFieldCode);
 
-        $sortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $sortOrderConfig = $this->createMock(SortOrderConfig::class);
         $sortOrderConfig->method('getAttributeCode')->willReturn($stubAttributeCode);
         $sortOrderConfig->method('getSelectedDirection')->willReturn($sortDirection);
 
@@ -85,7 +85,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
         $stubSortOrderConfig = $this->createStubSortOrderConfig('foo', SortOrderDirection::ASC);
 
-        $stubQueryOptions = $this->getMock(QueryOptions::class, [], [], '', false);
+        $stubQueryOptions = $this->createMock(QueryOptions::class);
         $stubQueryOptions->method('getFilterSelection')->willReturn($filterSelection);
         $stubQueryOptions->method('getContext')->willReturn($this->createTestContext());
         $stubQueryOptions->method('getFacetFiltersToIncludeInResult')->willReturn($facetFiltersToIncludeInResult);
@@ -98,10 +98,10 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->mockHttpClient = $this->getMock(SolrHttpClient::class, [], [], '', false);
+        $this->mockHttpClient = $this->createMock(SolrHttpClient::class);
 
         /** @var FacetFieldTransformationRegistry|MockObject $stubTransformationRegistry */
-        $stubTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
+        $stubTransformationRegistry = $this->createMock(FacetFieldTransformationRegistry::class);
 
         $testGlobalProductListingCriteria = SearchCriterionEqual::create(
             $this->testGlobalProductListingCriteriaFieldName,

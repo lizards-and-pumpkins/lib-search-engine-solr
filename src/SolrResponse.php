@@ -7,6 +7,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
+use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\InvalidFacetQueryFormatInSolrResponseException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\Import\Product\ProductId;
@@ -171,20 +172,39 @@ class SolrResponse
         $queries = array_keys($facetQueries);
 
         return array_reduce($queries, function (array $carry, $query) use ($facetQueries, $attributeCodes) {
-            preg_match('/^(.*):\[(.*) TO (.*)\]$/', $query, $matches);
+            if (preg_match('/^(.*):\[(.*) TO (.*)\]$/', $query, $matches)) {
+                $attributeCode = $matches[1];
 
-            $attributeCode = $matches[1];
+                if (in_array($attributeCode, $attributeCodes)) {
+                    return $carry;
+                }
 
-            if (in_array($attributeCode, $attributeCodes)) {
+                $value = $this->encodeFilterRange($attributeCode, $matches[2], $matches[3]);
+                $count = $facetQueries[$query];
+
+                $carry[$attributeCode][$value] = $count;
+
                 return $carry;
             }
 
-            $value = $this->getEncodedFilterRange($attributeCode, $matches[2], $matches[3]);
-            $count = $facetQueries[$query];
+            if (preg_match('/^(.*):\((.*)\)$/', $query, $matches)) {
+                $attributeCode = $matches[1];
 
-            $carry[$attributeCode][$value] = $count;
+                if (in_array($attributeCode, $attributeCodes)) {
+                    return $carry;
+                }
 
-            return $carry;
+                $value = $this->encodeFilter($attributeCode, $matches[2]);
+                $count = $facetQueries[$query];
+
+                $carry[$attributeCode][$value] = $count;
+
+                return $carry;
+            }
+
+            throw new InvalidFacetQueryFormatInSolrResponseException(
+                sprintf('Facet query "%s" format is invalid', $query)
+            );
         }, []);
     }
 
@@ -204,15 +224,31 @@ class SolrResponse
 
     /**
      * @param string $attributeCode
+     * @param string $value
+     * @return string
+     */
+    private function encodeFilter($attributeCode, $value)
+    {
+        if (! $this->facetFieldTransformationRegistry->hasTransformationForCode($attributeCode)) {
+            return $value;
+        }
+
+        $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($attributeCode);
+        
+        return $transformation->encode($value);
+    }
+
+    /**
+     * @param string $attributeCode
      * @param string $from
      * @param string $to
      * @return string
      */
-    private function getEncodedFilterRange($attributeCode, $from, $to)
+    private function encodeFilterRange($attributeCode, $from, $to)
     {
-        if (!$this->facetFieldTransformationRegistry->hasTransformationForCode($attributeCode)) {
+        if (! $this->facetFieldTransformationRegistry->hasTransformationForCode($attributeCode)) {
             throw new NoFacetFieldTransformationRegisteredException(
-                sprintf('No facet field transformation is geristered for "%s" attribute.', $attributeCode)
+                sprintf('No facet field transformation is registered for "%s" attribute.', $attributeCode)
             );
         }
 

@@ -34,8 +34,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->stubCriteria = $this->getMock(CompositeSearchCriterion::class, [], [], '', false);
-        $this->stubQueryOptions = $this->getMock(QueryOptions::class, [], [], '', false);
+        $this->stubCriteria = $this->createMock(CompositeSearchCriterion::class);
+        $this->stubQueryOptions = $this->createMock(QueryOptions::class);
         $this->solrQuery = new SolrQuery($this->stubCriteria, $this->stubQueryOptions);
     }
 
@@ -70,12 +70,12 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
             ]
         ]);
 
-        $stubContext = $this->getMock(Context::class);
+        $stubContext = $this->createMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn(['qux']);
         $stubContext->method('getValue')->willReturnMap([['qux', 2]]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
         $result = $this->solrQuery->toArray();
@@ -93,11 +93,11 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
             'operation' => 'Equal'
         ]);
 
-        $stubContext = $this->getMock(Context::class);
+        $stubContext = $this->createMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
         $rowsPerPage = 10;
@@ -117,11 +117,11 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
             'operation' => 'Equal'
         ]);
 
-        $stubContext = $this->getMock(Context::class);
+        $stubContext = $this->createMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
         $rowsPerPage = 10;
@@ -144,14 +144,14 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
             'operation' => 'Equal'
         ]);
 
-        $stubContext = $this->getMock(Context::class);
+        $stubContext = $this->createMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
         $sortAttributeCode = 'baz';
         $sortDirection = SortOrderDirection::ASC;
 
-        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $stubSortOrderConfig->method('getAttributeCode')->willReturn($sortAttributeCode);
         $stubSortOrderConfig->method('getSelectedDirection')->willReturn($sortDirection);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
@@ -181,12 +181,12 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
             ]
         ]);
 
-        $stubContext = $this->getMock(Context::class);
+        $stubContext = $this->createMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn(['qu+x']);
         $stubContext->method('getValue')->willReturnMap([['qu+x', 2]]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
         $result = $this->solrQuery->toArray();
@@ -203,11 +203,11 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
             'operation' => 'Equal'
         ]);
 
-        $stubContext = $this->getMock(Context::class);
+        $stubContext = $this->createMock(Context::class);
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->getMock(SortOrderConfig::class, [], [], '', false);
+        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
 
         $resultA = $this->solrQuery->toArray();
