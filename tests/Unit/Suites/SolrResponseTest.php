@@ -7,7 +7,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformation;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
-use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\InvalidFacetQueryFormatInSolrResponseException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\Import\Product\ProductId;
@@ -196,23 +195,6 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
-    }
-
-    public function testExceptionIsThrownIfFacetQueryHasInvalidFormat()
-    {
-        $this->expectException(InvalidFacetQueryFormatInSolrResponseException::class);
-        
-        $facetQueryCount = 2;
-        $responseArray = [
-            'facet_counts' => [
-                'facet_queries' => ['invalid-facet-query' => $facetQueryCount]
-            ]
-        ];
-
-        $response = SolrResponse::fromSolrResponseArray($responseArray, $this->stubFacetFieldTransformationRegistry);
-
-        $selectedFilterAttributeCodes = [];
-        $response->getNonSelectedFacetFields($selectedFilterAttributeCodes);
     }
 
     public function testSelectedFiltersAreNotReturnedAlongWithFacetQueries()
