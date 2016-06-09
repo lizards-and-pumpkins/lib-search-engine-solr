@@ -127,11 +127,16 @@ class SolrFacetFilterRequest
     {
         if ($this->facetFieldTransformationRegistry->hasTransformationForCode($filterCode)) {
             $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($filterCode);
-            $formattedRanges = array_map(function ($filterValue) use ($transformation) {
-                $facetFilterRange = $transformation->decode($filterValue);
-                return sprintf('[%s TO %s]', $facetFilterRange->from(), $facetFilterRange->to());
+            $formattedValues = array_map(function ($filterValue) use ($transformation) {
+                $facetValue = $transformation->decode($filterValue);
+                
+                if ($facetValue instanceof FacetFilterRange) {
+                    return sprintf('[%s TO %s]', $facetValue->from(), $facetValue->to());
+                }
+                
+                return $facetValue;
             }, $filterValues);
-            return sprintf('%s:(%s)', $filterCode, implode(' OR ', $formattedRanges));
+            return sprintf('%s:(%s)', $filterCode, implode(' OR ', $formattedValues));
         }
 
         return sprintf('%s:("%s")', $filterCode, implode('" OR "', $filterValues));

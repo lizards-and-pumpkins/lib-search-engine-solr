@@ -2,11 +2,9 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
-use LizardsAndPumpkins\DataPool\SearchEngine\Exception\NoFacetFieldTransformationRegisteredException;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
-use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\Import\Product\ProductId;
@@ -105,8 +103,7 @@ class SolrResponse
      */
     private function getNonSelectedFacetFieldsFromSolrFacetQueries(array $selectedFilterAttributeCodes)
     {
-        $facetQueries = $this->getFacetQueries();
-        $rawFacetQueries = $this->buildRawFacetQueriesForGivenAttributes($facetQueries, $selectedFilterAttributeCodes);
+        $rawFacetQueries = $this->buildRawFacetQueriesForUnselectedAttributes($selectedFilterAttributeCodes);
 
         return $this->buildFacetFieldValuesFromRawFacetQueries($rawFacetQueries);
     }
@@ -124,15 +121,19 @@ class SolrResponse
     }
 
     /**
-     * @return array[]
+     * @return SolrFacetQuery[]
      */
-    private function getFacetQueries()
+    private function extractFacetQueriesFromSolrResponse()
     {
-        if (! isset($this->response['facet_counts']['facet_queries'])) {
+        if (!isset($this->response['facet_counts']['facet_queries'])) {
             return [];
         }
 
-        return $this->response['facet_counts']['facet_queries'];
+        $rawFacetQueries = $this->response['facet_counts']['facet_queries'];
+
+        return array_map(function($query) use ($rawFacetQueries) {
+            return SolrFacetQuery::fromStringAndCount($query, $rawFacetQueries[$query]);
+        }, array_keys($rawFacetQueries));
     }
 
     /**
@@ -162,27 +163,22 @@ class SolrResponse
     }
 
     /**
-     * @param int[] $facetQueries
-     * @param string[] $attributeCodes
+     * @param string[] $selectedAttributeCodes
      * @return array[]
      */
-    private function buildRawFacetQueriesForGivenAttributes(array $facetQueries, array $attributeCodes)
+    private function buildRawFacetQueriesForUnselectedAttributes(array $selectedAttributeCodes)
     {
-        $queries = array_keys($facetQueries);
+        $queries = $this->extractFacetQueriesFromSolrResponse();
 
-        return array_reduce($queries, function (array $carry, $query) use ($facetQueries, $attributeCodes) {
-            preg_match('/^(.*):\[(.*) TO (.*)\]$/', $query, $matches);
+        return array_reduce($queries, function (array $carry, SolrFacetQuery $query) use ($selectedAttributeCodes) {
+            $attributeCode = (string) $query->getAttributeCode();
 
-            $attributeCode = $matches[1];
-
-            if (in_array($attributeCode, $attributeCodes)) {
+            if (in_array($attributeCode, $selectedAttributeCodes)) {
                 return $carry;
             }
 
-            $value = $this->getEncodedFilterRange($attributeCode, $matches[2], $matches[3]);
-            $count = $facetQueries[$query];
-
-            $carry[$attributeCode][$value] = $count;
+            $value = $query->getEncodedValue($this->facetFieldTransformationRegistry);
+            $carry[$attributeCode][$value] = $query->getCount();
 
             return $carry;
         }, []);
@@ -203,30 +199,6 @@ class SolrResponse
     }
 
     /**
-     * @param string $attributeCode
-     * @param string $from
-     * @param string $to
-     * @return string
-     */
-    private function getEncodedFilterRange($attributeCode, $from, $to)
-    {
-        if (!$this->facetFieldTransformationRegistry->hasTransformationForCode($attributeCode)) {
-            throw new NoFacetFieldTransformationRegisteredException(
-                sprintf('No facet field transformation is geristered for "%s" attribute.', $attributeCode)
-            );
-        }
-
-        $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($attributeCode);
-
-        $facetFilterRange = FacetFilterRange::create(
-            $this->getRangeBoundaryValue($from),
-            $this->getRangeBoundaryValue($to)
-        );
-
-        return $transformation->encode($facetFilterRange);
-    }
-
-    /**
      * @param int[] $attributeValueCounts
      * @return FacetFieldValue[]
      */
@@ -236,18 +208,5 @@ class SolrResponse
             $count = $attributeValueCounts[$value];
             return FacetFieldValue::create((string) $value, $count);
         }, array_keys($attributeValueCounts));
-    }
-
-    /**
-     * @param string $boundary
-     * @return string
-     */
-    private function getRangeBoundaryValue($boundary)
-    {
-        if ('*' === $boundary) {
-            return '';
-        }
-
-        return $boundary;
     }
 }

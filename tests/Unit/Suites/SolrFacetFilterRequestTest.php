@@ -31,10 +31,10 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
      */
     private function createStubFacetFilterRequestField($attributeCodeString)
     {
-        $stubAttribute = $this->getMock(AttributeCode::class, [], [], '', false);
+        $stubAttribute = $this->createMock(AttributeCode::class);
         $stubAttribute->method('__toString')->willReturn($attributeCodeString);
 
-        $stubFacetFilterRequestField = $this->getMock(FacetFilterRequestField::class, [], [], '', false);
+        $stubFacetFilterRequestField = $this->createMock(FacetFilterRequestField::class);
         $stubFacetFilterRequestField->method('getAttributeCode')->willReturn($stubAttribute);
 
         return $stubFacetFilterRequestField;
@@ -48,14 +48,14 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
      */
     private function createStubFacetFilterRequestRangedField($attributeCodeString, $rangeFrom, $rangeTo)
     {
-        $stubAttribute = $this->getMock(AttributeCode::class, [], [], '', false);
+        $stubAttribute = $this->createMock(AttributeCode::class);
         $stubAttribute->method('__toString')->willReturn($attributeCodeString);
 
-        $stubFacetFilterRange = $this->getMock(FacetFilterRange::class, [], [], '', false);
+        $stubFacetFilterRange = $this->createMock(FacetFilterRange::class);
         $stubFacetFilterRange->method('from')->willReturn($rangeFrom);
         $stubFacetFilterRange->method('to')->willReturn($rangeTo);
 
-        $stubFacetFilterRequestRangedField = $this->getMock(FacetFilterRequestRangedField::class, [], [], '', false);
+        $stubFacetFilterRequestRangedField = $this->createMock(FacetFilterRequestRangedField::class);
         $stubFacetFilterRequestRangedField->method('getAttributeCode')->willReturn($stubAttribute);
         $stubFacetFilterRequestRangedField->method('isRanged')->willReturn(true);
         $stubFacetFilterRequestRangedField->method('getRanges')->willReturn([$stubFacetFilterRange]);
@@ -65,8 +65,8 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->stubFacetFiltersToIncludeInResult = $this->getMock(FacetFiltersToIncludeInResult::class);
-        $this->stubFacetFieldTransformationRegistry = $this->getMock(FacetFieldTransformationRegistry::class);
+        $this->stubFacetFiltersToIncludeInResult = $this->createMock(FacetFiltersToIncludeInResult::class);
+        $this->stubFacetFieldTransformationRegistry = $this->createMock(FacetFieldTransformationRegistry::class);
     }
 
     public function testEmptyArrayIsReturnedIfNoFacetFieldsAreRequested()
@@ -171,22 +171,37 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
 
     public function testFacetFieldTransformationIsAppliedToFacetField()
     {
-        $testAttributeCode = 'foo';
+        $testRangedAttributeCode = 'foo';
+        $testNormalAttributeCode = 'bar';
 
-        $stubField = $this->createStubFacetFilterRequestField($testAttributeCode);
-        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([$stubField]);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([
+            $this->createStubFacetFilterRequestField($testRangedAttributeCode),
+            $this->createStubFacetFilterRequestField($testNormalAttributeCode),
+        ]);
 
-        $testFilterSelection = ['foo' => ['Value does not really matter as it will be transformed in any way.']];
+        $testFilterSelection = [
+            $testRangedAttributeCode => ['Value does not matter as it will be transformed.'],
+            $testNormalAttributeCode => ['Does not matter either.'],
+        ];
 
-        $stubFacetFilterRange = $this->getMock(FacetFilterRange::class, [], [], '', false);
-        $stubFacetFilterRange->method('from')->willReturn('bar');
-        $stubFacetFilterRange->method('to')->willReturn('baz');
+        $rangeFrom = 'baz';
+        $rangeTo = 'qux';
+        $stubFacetFilterRange = $this->createMock(FacetFilterRange::class);
+        $stubFacetFilterRange->method('from')->willReturn($rangeFrom);
+        $stubFacetFilterRange->method('to')->willReturn($rangeTo);
 
-        $stubTransformation = $this->getMock(FacetFieldTransformation::class, [], [], '', false);
-        $stubTransformation->method('decode')->willReturn($stubFacetFilterRange);
+        $stubRangedTransformation = $this->createMock(FacetFieldTransformation::class);
+        $stubRangedTransformation->method('decode')->willReturn($stubFacetFilterRange);
+
+        $transformedValue = 'Transformed value';
+        $stubNormalTransformation = $this->createMock(FacetFieldTransformation::class);
+        $stubNormalTransformation->method('decode')->willReturn($transformedValue);
 
         $this->stubFacetFieldTransformationRegistry->method('hasTransformationForCode')->willReturn(true);
-        $this->stubFacetFieldTransformationRegistry->method('getTransformationByCode')->willReturn($stubTransformation);
+        $this->stubFacetFieldTransformationRegistry->method('getTransformationByCode')->willReturnMap([
+            [$testRangedAttributeCode, $stubRangedTransformation],
+            [$testNormalAttributeCode, $stubNormalTransformation],
+        ]);
 
         $solrFacetFilterRequest = new SolrFacetFilterRequest(
             $this->stubFacetFiltersToIncludeInResult,
@@ -199,9 +214,12 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
             'facet.mincount' => 1,
             'facet.limit' => -1,
             'facet.sort' => 'index',
-            'facet.field' => ['foo'],
+            'facet.field' => [$testRangedAttributeCode, $testNormalAttributeCode],
             'facet.query' => [],
-            'fq' => ['foo:([bar TO baz])'],
+            'fq' => [
+                sprintf('%s:([%s TO %s])', $testRangedAttributeCode, $rangeFrom, $rangeTo),
+                sprintf('%s:(%s)', $testNormalAttributeCode, $transformedValue),
+            ]
         ];
 
         $this->assertSame($expectedArray, $solrFacetFilterRequest->toArray());
