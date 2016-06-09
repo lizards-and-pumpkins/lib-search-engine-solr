@@ -2,7 +2,6 @@
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
-use LizardsAndPumpkins\DataPool\SearchEngine\Exception\NoFacetFieldTransformationRegisteredException;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformation;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
@@ -140,28 +139,6 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
     }
 
-    public function testExceptionIsThrownIfNoTransformationIsRegisteredForFacetField()
-    {
-        $this->expectException(NoFacetFieldTransformationRegisteredException::class);
-
-        $attributeCodeString = 'price';
-        $attributeValueFrom = '*';
-        $attributeValueTo = '500';
-        $attributeValueCount = 2;
-
-        $query = sprintf('%s:[%s TO %s]', $attributeCodeString, $attributeValueFrom, $attributeValueTo);
-
-        $responseArray = [
-            'facet_counts' => [
-                'facet_queries' => [$query => $attributeValueCount]
-            ]
-        ];
-        $selectedFilterAttributeCodes = [];
-
-        $response = SolrResponse::fromSolrResponseArray($responseArray, $this->stubFacetFieldTransformationRegistry);
-        $response->getNonSelectedFacetFields($selectedFilterAttributeCodes);
-    }
-
     public function testFacetQueriesAreReturned()
     {
         $attributeCodeString = 'price';
@@ -225,86 +202,5 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
-    }
-
-    public function testFacetFieldTransformationsAreAppliedToFacetQueries()
-    {
-        $rangedAttributeCode = 'price';
-        $rangedAttributeValueFrom = '*';
-        $rangedAttributeValueTo = '500';
-        $rangedAttributeValueCount = 2;
-
-        $query = sprintf('%s:[%s TO %s]', $rangedAttributeCode, $rangedAttributeValueFrom, $rangedAttributeValueTo);
-        $encodedRangedValue = sprintf('From %s to %s', $rangedAttributeValueFrom, $rangedAttributeValueTo);
-
-        $stubRangedFacetFieldTransformation = $this->createMock(FacetFieldTransformation::class);
-        $stubRangedFacetFieldTransformation->method('encode')->willReturn($encodedRangedValue);
-
-        $plainAttributeCode = 'foo';
-        $plainAttributeValue = 'bar';
-        $plainAttributeQuery = sprintf('%s:(%s)', $plainAttributeCode, $plainAttributeValue);
-        $plainAttributeValueCount = 4;
-        $encodedPlainValue = 'baz';
-
-        $stubPlainFacetFieldTransformation = $this->createMock(FacetFieldTransformation::class);
-        $stubPlainFacetFieldTransformation->method('encode')->willReturn($encodedPlainValue);
-
-        $this->stubFacetFieldTransformationRegistry->method('hasTransformationForCode')->willReturn(true);
-        $this->stubFacetFieldTransformationRegistry->method('getTransformationByCode')->willReturnMap([
-            [$rangedAttributeCode, $stubRangedFacetFieldTransformation],
-            [$plainAttributeCode, $stubPlainFacetFieldTransformation],
-        ]);
-
-        $responseArray = [
-            'facet_counts' => [
-                'facet_queries' => [
-                    $query => $rangedAttributeValueCount,
-                    $plainAttributeQuery => $plainAttributeValueCount
-                ]
-            ]
-        ];
-
-        $selectedFilterAttributeCodes = [];
-        $response = SolrResponse::fromSolrResponseArray($responseArray, $this->stubFacetFieldTransformationRegistry);
-
-        $expectedResult = [
-            new FacetField(
-                AttributeCode::fromString($rangedAttributeCode),
-                FacetFieldValue::create($encodedRangedValue, $rangedAttributeValueCount)
-            ),
-            new FacetField(
-                AttributeCode::fromString($plainAttributeCode),
-                FacetFieldValue::create($encodedPlainValue, $plainAttributeValueCount)
-            ),
-        ];
-
-        $this->assertEquals($expectedResult, $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
-    }
-
-    public function testPlainValueIsNotEncodedIfNoTransformationIsRegistered()
-    {
-        $attributeCode = 'foo';
-        $attributeValue = 'bar';
-        $attributeValueCount = 4;
-
-        $this->stubFacetFieldTransformationRegistry->method('hasTransformationForCode')->willReturn(false);
-
-        $responseArray = [
-            'facet_counts' => [
-                'facet_queries' => [sprintf('%s:(%s)', $attributeCode, $attributeValue) => $attributeValueCount]
-            ]
-        ];
-
-        $selectedFilterAttributeCodes = [];
-        $response = SolrResponse::fromSolrResponseArray($responseArray, $this->stubFacetFieldTransformationRegistry);
-
-        $expectedResult = [
-            new FacetField(
-                AttributeCode::fromString($attributeCode),
-                FacetFieldValue::create($attributeValue, $attributeValueCount)
-            )
-        ];
-
-        $this->assertEquals($expectedResult, $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
     }
 }
