@@ -134,7 +134,7 @@ class SolrFacetFilterRequest
                     return sprintf('[%s TO %s]', $facetValue->from(), $facetValue->to());
                 }
                 
-                return $facetValue;
+                return '"' . $facetValue . '"';
             }, $filterValues);
             return sprintf('%s:(%s)', $filterCode, implode(' OR ', $formattedValues));
         }
