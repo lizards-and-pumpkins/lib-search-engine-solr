@@ -218,7 +218,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
             'facet.query' => [],
             'fq' => [
                 sprintf('%s:([%s TO %s])', $testRangedAttributeCode, $rangeFrom, $rangeTo),
-                sprintf('%s:(%s)', $testNormalAttributeCode, $transformedValue),
+                sprintf('%s:("%s")', $testNormalAttributeCode, $transformedValue),
             ]
         ];
 
