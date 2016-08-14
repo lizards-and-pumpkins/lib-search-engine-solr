@@ -35,7 +35,7 @@ class SolrQuery
     }
 
     /**
-     * @return string[]
+     * @return mixed[]
      */
     public function toArray()
     {
