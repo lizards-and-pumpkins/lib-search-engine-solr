@@ -131,15 +131,19 @@ class SolrFacetFilterRequest
                 $facetValue = $transformation->decode($filterValue);
                 
                 if ($facetValue instanceof FacetFilterRange) {
-                    return sprintf('[%s TO %s]', $facetValue->from(), $facetValue->to());
+                    $from = $this->escapeQueryChars($facetValue->from());
+                    $to = $this->escapeQueryChars($facetValue->to());
+
+                    return sprintf('[%s TO %s]', $from, $to);
                 }
                 
-                return sprintf('"%s"', $facetValue);
+                return sprintf('"%s"', $this->escapeQueryChars($facetValue));
             }, $filterValues);
-            return sprintf('%s:(%s)', $filterCode, implode(' OR ', $formattedValues));
+            return sprintf('%s:(%s)', $this->escapeQueryChars($filterCode), implode(' OR ', $formattedValues));
         }
 
-        return sprintf('%s:("%s")', $filterCode, implode('" OR "', $filterValues));
+        $escapedFilterValues = array_map([$this, 'escapeQueryChars'], $filterValues);
+        return sprintf('%s:("%s")', $this->escapeQueryChars($filterCode), implode('" OR "', $escapedFilterValues));
     }
 
     /**
@@ -153,5 +157,20 @@ class SolrFacetFilterRequest
         }
 
         return $boundary;
+    }
+
+    /**
+     * @param string $queryString
+     * @return string
+     */
+    private function escapeQueryChars($queryString)
+    {
+        $src = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '~', '*', '?', ':', '"', ';', '/'];
+
+        $replace = array_map(function ($string) {
+            return '\\' . $string;
+        }, $src);
+
+        return str_replace($src, $replace, $queryString);
     }
 }

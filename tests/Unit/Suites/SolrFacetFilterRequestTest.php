@@ -169,6 +169,34 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($expectedArray, $solrFacetFilterRequest->toArray());
     }
 
+    public function testSpacialCharactersInSelectedFieldsInFqElementOfResultArrayAreEscaped()
+    {
+        $testAttributeCode = 'foo';
+
+        $stubField = $this->createStubFacetFilterRequestField($testAttributeCode);
+        $this->stubFacetFiltersToIncludeInResult->method('getFields')->willReturn([$stubField]);
+
+        $testFilterSelection = ['fo+o' => ['ba\r', 'ba"z']];
+
+        $solrFacetFilterRequest = new SolrFacetFilterRequest(
+            $this->stubFacetFiltersToIncludeInResult,
+            $testFilterSelection,
+            $this->stubFacetFieldTransformationRegistry
+        );
+
+        $expectedArray = [
+            'facet' => 'on',
+            'facet.mincount' => 1,
+            'facet.limit' => -1,
+            'facet.sort' => 'index',
+            'facet.field' => ['foo'],
+            'facet.query' => [],
+            'fq' => ['fo\+o:("ba\\\\r" OR "ba\"z")'],
+        ];
+
+        $this->assertSame($expectedArray, $solrFacetFilterRequest->toArray());
+    }
+
     public function testFacetFieldTransformationIsAppliedToFacetField()
     {
         $testRangedAttributeCode = 'foo';
