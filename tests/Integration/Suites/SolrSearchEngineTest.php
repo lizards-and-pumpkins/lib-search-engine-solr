@@ -9,7 +9,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetField
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
 use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderDirection;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
@@ -50,21 +49,23 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
     /**
      * @param SortOrderConfig $sortOrderConfig
-     * @return QueryOptions|\PHPUnit_Framework_MockObject_MockObject
+     * @return QueryOptions
      */
-    private function createStubQueryOptions(SortOrderConfig $sortOrderConfig)
+    private function createTestQueryOptions(SortOrderConfig $sortOrderConfig)
     {
+        $filterSelection = [];
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
+        $rowsPerPage = 100;
+        $pageNumber = 0;
 
-        $stubQueryOptions = $this->createMock(QueryOptions::class);
-        $stubQueryOptions->method('getFilterSelection')->willReturn([]);
-        $stubQueryOptions->method('getContext')->willReturn($this->createTestContext());
-        $stubQueryOptions->method('getFacetFiltersToIncludeInResult')->willReturn($facetFiltersToIncludeInResult);
-        $stubQueryOptions->method('getRowsPerPage')->willReturn(100);
-        $stubQueryOptions->method('getPageNumber')->willReturn(0);
-        $stubQueryOptions->method('getSortOrderConfig')->willReturn($sortOrderConfig);
-
-        return $stubQueryOptions;
+        return QueryOptions::create(
+            $filterSelection,
+            $this->createTestContext(),
+            $facetFiltersToIncludeInResult,
+            $rowsPerPage,
+            $pageNumber,
+            $sortOrderConfig
+        );
     }
 
     protected function tearDown()
@@ -104,7 +105,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $this->expectException(SolrException::class);
         $this->expectExceptionMessage(sprintf('undefined field %s', $nonExistingFieldCode));
 
-        $searchEngine->query($searchCriteria, $this->createStubQueryOptions($sortOrderConfig));
+        $searchEngine->query($searchCriteria, $this->createTestQueryOptions($sortOrderConfig));
     }
 
     public function testExceptionIsThrownIfSolrIsNotAccessible()
@@ -117,10 +118,9 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
-        /** @var SearchCriteria|\PHPUnit_Framework_MockObject_MockObject $stubCriteria */
-        $stubCriteria = $this->createMock(SearchCriteria::class);
+        $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
 
-        $searchEngine = new SolrSearchEngine($client, $stubCriteria, $facetFieldTransformationRegistry);
+        $searchEngine = new SolrSearchEngine($client, $searchCriteria, $facetFieldTransformationRegistry);
 
         $this->expectException(SolrConnectionException::class);
         $this->expectExceptionMessage('Error 404 Not Found');
@@ -128,6 +128,6 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
         $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
-        $searchEngine->query($searchCriteria, $this->createStubQueryOptions($sortOrderConfig));
+        $searchEngine->query($searchCriteria, $this->createTestQueryOptions($sortOrderConfig));
     }
 }
