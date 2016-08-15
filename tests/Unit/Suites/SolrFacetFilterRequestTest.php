@@ -169,7 +169,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($expectedArray, $solrFacetFilterRequest->toArray());
     }
 
-    public function testSpacialCharactersInSelectedFieldsInFqElementOfResultArrayAreEscaped()
+    public function testSpecialCharactersInSelectedFieldsInFqElementOfResultArrayAreEscaped()
     {
         $testAttributeCode = 'foo';
 
