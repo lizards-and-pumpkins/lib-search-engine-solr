@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformation;
@@ -29,7 +31,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
      * @param string $attributeCodeString
      * @return FacetFilterRequestField|\PHPUnit_Framework_MockObject_MockObject
      */
-    private function createStubFacetFilterRequestField($attributeCodeString)
+    private function createStubFacetFilterRequestField(string $attributeCodeString) : FacetFilterRequestField
     {
         $stubAttribute = $this->createMock(AttributeCode::class);
         $stubAttribute->method('__toString')->willReturn($attributeCodeString);
@@ -46,8 +48,11 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
      * @param string|null $rangeTo
      * @return FacetFilterRequestRangedField|\PHPUnit_Framework_MockObject_MockObject
      */
-    private function createStubFacetFilterRequestRangedField($attributeCodeString, $rangeFrom, $rangeTo)
-    {
+    private function createStubFacetFilterRequestRangedField(
+        string $attributeCodeString,
+        $rangeFrom,
+        $rangeTo
+    ) : FacetFilterRequestRangedField {
         $stubAttribute = $this->createMock(AttributeCode::class);
         $stubAttribute->method('__toString')->willReturn($attributeCodeString);
 
@@ -134,7 +139,7 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
             'facet.limit' => -1,
             'facet.sort' => 'index',
             'facet.field' => [],
-            'facet.query' => [sprintf('%s:[%s TO %s]', $testAttributeCode, '*', 10)],
+            'facet.query' => [sprintf('%s:[%s TO %s]', $testAttributeCode, '*', $rangeTo)],
             'fq' => [],
         ];
 

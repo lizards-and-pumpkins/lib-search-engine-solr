@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\SelfContainedContext;
@@ -22,9 +24,9 @@ class SolrDocumentBuilderTest extends \PHPUnit_Framework_TestCase
 
         $contextPartName = 'baz';
         $contextPartValue = 'qux';
-        $context = SelfContainedContext::fromArray([$contextPartName => $contextPartValue]);
+        $context = new SelfContainedContext([$contextPartName => $contextPartValue]);
 
-        $productId = ProductId::fromString(uniqid());
+        $productId = new ProductId(uniqid());
 
         $searchDocument = new SearchDocument($searchDocumentFieldCollection, $context, $productId);
 

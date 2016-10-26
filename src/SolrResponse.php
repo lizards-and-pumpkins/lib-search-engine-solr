@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
@@ -39,7 +41,7 @@ class SolrResponse
     public static function fromSolrResponseArray(
         array $rawResponse,
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
-    ) {
+    ) : SolrResponse {
         if (isset($rawResponse['error'])) {
             throw new SolrException($rawResponse['error']['msg']);
         }
@@ -47,10 +49,7 @@ class SolrResponse
         return new self($rawResponse, $facetFieldTransformationRegistry);
     }
 
-    /**
-     * @return int
-     */
-    public function getTotalNumberOfResults()
+    public function getTotalNumberOfResults() : int
     {
         if (! isset($this->response['response']['numFound'])) {
             return 0;
@@ -62,7 +61,7 @@ class SolrResponse
     /**
      * @return ProductId[]
      */
-    public function getMatchingProductIds()
+    public function getMatchingProductIds() : array
     {
         if (! isset($this->response['response']) || ! isset($this->response['response']['docs'])) {
             return [];
@@ -75,7 +74,7 @@ class SolrResponse
      * @param string[] $selectedFilterAttributeCodes
      * @return FacetField[]
      */
-    public function getNonSelectedFacetFields(array $selectedFilterAttributeCodes)
+    public function getNonSelectedFacetFields(array $selectedFilterAttributeCodes) : array
     {
         return array_merge(
             $this->getNonSelectedFacetFieldsFromSolrFacetFields($selectedFilterAttributeCodes),
@@ -87,7 +86,7 @@ class SolrResponse
      * @param string[] $selectedFilterAttributeCodes
      * @return FacetField[]
      */
-    private function getNonSelectedFacetFieldsFromSolrFacetFields(array $selectedFilterAttributeCodes)
+    private function getNonSelectedFacetFieldsFromSolrFacetFields(array $selectedFilterAttributeCodes) : array
     {
         $facetFieldsArray = $this->getFacetFields();
         $unselectedAttributeCodes = array_diff(array_keys($facetFieldsArray), $selectedFilterAttributeCodes);
@@ -101,7 +100,7 @@ class SolrResponse
      * @param string[] $selectedFilterAttributeCodes
      * @return FacetField[]
      */
-    private function getNonSelectedFacetFieldsFromSolrFacetQueries(array $selectedFilterAttributeCodes)
+    private function getNonSelectedFacetFieldsFromSolrFacetQueries(array $selectedFilterAttributeCodes) : array
     {
         $rawFacetQueries = $this->buildRawFacetQueriesForUnselectedAttributes($selectedFilterAttributeCodes);
 
@@ -111,7 +110,7 @@ class SolrResponse
     /**
      * @return array[]
      */
-    private function getFacetFields()
+    private function getFacetFields() : array
     {
         if (! isset($this->response['facet_counts']['facet_fields'])) {
             return [];
@@ -123,7 +122,7 @@ class SolrResponse
     /**
      * @return SolrFacetQuery[]
      */
-    private function extractFacetQueriesFromSolrResponse()
+    private function extractFacetQueriesFromSolrResponse() : array
     {
         if (!isset($this->response['facet_counts']['facet_queries'])) {
             return [];
@@ -140,10 +139,10 @@ class SolrResponse
      * @param mixed[] $responseDocuments
      * @return ProductId[]
      */
-    private function getProductIdsOfMatchingDocuments(array $responseDocuments)
+    private function getProductIdsOfMatchingDocuments(array $responseDocuments) : array
     {
         return array_map(function (array $document) {
-            return ProductId::fromString($document[SolrSearchEngine::PRODUCT_ID_FIELD_NAME]);
+            return new ProductId($document[SolrSearchEngine::PRODUCT_ID_FIELD_NAME]);
         }, $responseDocuments);
     }
 
@@ -152,11 +151,11 @@ class SolrResponse
      * @param mixed[] $facetFieldsValues
      * @return FacetField
      */
-    private function createFacetField($attributeCodeString, array $facetFieldsValues)
+    private function createFacetField(string $attributeCodeString, array $facetFieldsValues) : FacetField
     {
         $attributeCode = AttributeCode::fromString($attributeCodeString);
         $facetFieldValues = array_map(function (array $fieldData) {
-            return FacetFieldValue::create($fieldData[0], $fieldData[1]);
+            return new FacetFieldValue($fieldData[0], $fieldData[1]);
         }, array_chunk($facetFieldsValues, 2));
 
         return new FacetField($attributeCode, ...$facetFieldValues);
@@ -166,7 +165,7 @@ class SolrResponse
      * @param string[] $selectedAttributeCodes
      * @return array[]
      */
-    private function buildRawFacetQueriesForUnselectedAttributes(array $selectedAttributeCodes)
+    private function buildRawFacetQueriesForUnselectedAttributes(array $selectedAttributeCodes) : array
     {
         $queries = $this->extractFacetQueriesFromSolrResponse();
 
@@ -188,7 +187,7 @@ class SolrResponse
      * @param array[] $rawFacetQueries
      * @return FacetField[]
      */
-    private function buildFacetFieldValuesFromRawFacetQueries(array $rawFacetQueries)
+    private function buildFacetFieldValuesFromRawFacetQueries(array $rawFacetQueries) : array
     {
         return array_map(function ($attributeCodeString) use ($rawFacetQueries) {
             $attributeCode = AttributeCode::fromString($attributeCodeString);
@@ -202,11 +201,11 @@ class SolrResponse
      * @param int[] $attributeValueCounts
      * @return FacetFieldValue[]
      */
-    private function createFacetFieldValues(array $attributeValueCounts)
+    private function createFacetFieldValues(array $attributeValueCounts) : array
     {
         return array_map(function ($value) use ($attributeValueCounts) {
             $count = $attributeValueCounts[$value];
-            return FacetFieldValue::create((string) $value, $count);
+            return new FacetFieldValue((string) $value, $count);
         }, array_keys($attributeValueCounts));
     }
 }

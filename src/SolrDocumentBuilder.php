@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
@@ -13,7 +15,7 @@ class SolrDocumentBuilder
      * @param SearchDocument $document
      * @return string[]
      */
-    public static function fromSearchDocument(SearchDocument $document)
+    public static function fromSearchDocument(SearchDocument $document) : array
     {
         $context = $document->getContext();
 
@@ -31,7 +33,7 @@ class SolrDocumentBuilder
      * @param SearchDocumentFieldCollection $fieldCollection
      * @return array[]
      */
-    private static function getSearchDocumentFields(SearchDocumentFieldCollection $fieldCollection)
+    private static function getSearchDocumentFields(SearchDocumentFieldCollection $fieldCollection) : array
     {
         return array_reduce($fieldCollection->getFields(), function ($carry, SearchDocumentField $field) {
             return array_merge([$field->getKey() => $field->getValues()], $carry);
@@ -42,7 +44,7 @@ class SolrDocumentBuilder
      * @param Context $context
      * @return string[]
      */
-    private static function getContextFields(Context $context)
+    private static function getContextFields(Context $context) : array
     {
         return array_reduce($context->getSupportedCodes(), function ($carry, $contextCode) use ($context) {
             return array_merge([$contextCode => $context->getValue($contextCode)], $carry);

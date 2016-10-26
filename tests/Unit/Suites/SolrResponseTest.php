@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
@@ -71,7 +73,7 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
             ]
         ];
         $response = SolrResponse::fromSolrResponseArray($responseArray, $this->stubFacetFieldTransformationRegistry);
-        $expectedArray = [ProductId::fromString('foo'), ProductId::fromString('bar')];
+        $expectedArray = [new ProductId('foo'), new ProductId('bar')];
 
         $this->assertEquals($expectedArray, $response->getMatchingProductIds());
     }
@@ -103,7 +105,7 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
 
         $expectedFacetField = new FacetField(
             AttributeCode::fromString($attributeCodeString),
-            FacetFieldValue::create($attributeValue, $attributeValueCount)
+            new FacetFieldValue($attributeValue, $attributeValueCount)
         );
 
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
@@ -133,7 +135,7 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
 
         $expectedFacetField = new FacetField(
             AttributeCode::fromString($attributeCodeString),
-            FacetFieldValue::create($attributeValue, $attributeValueCount)
+            new FacetFieldValue($attributeValue, $attributeValueCount)
         );
 
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
@@ -168,7 +170,7 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
 
         $expectedFacetField = new FacetField(
             AttributeCode::fromString($attributeCodeString),
-            FacetFieldValue::create($encodedQueryValue, $attributeValueCount)
+            new FacetFieldValue($encodedQueryValue, $attributeValueCount)
         );
 
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));
@@ -198,7 +200,7 @@ class SolrResponseTest extends \PHPUnit_Framework_TestCase
 
         $expectedFacetField = new FacetField(
             AttributeCode::fromString($attributeCode),
-            FacetFieldValue::create($attributeValue, $attributeValueCount)
+            new FacetFieldValue($attributeValue, $attributeValueCount)
         );
 
         $this->assertEquals([$expectedFacetField], $response->getNonSelectedFacetFields($selectedFilterAttributeCodes));

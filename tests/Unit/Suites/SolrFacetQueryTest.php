@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\Exception\NoFacetFieldTransformationRegisteredException;
@@ -14,6 +16,18 @@ use LizardsAndPumpkins\Import\Product\AttributeCode;
  */
 class SolrFacetQueryTest extends \PHPUnit_Framework_TestCase
 {
+    public function testExceptionIsThrownIfFacetQueryStringIsNotAString()
+    {
+        $this->expectException(\TypeError::class);
+        SolrFacetQuery::fromStringAndCount([], 1);
+    }
+
+    public function testExceptionIsThrownIfFacetQueryCountIsNotAnInteger()
+    {
+        $this->expectException(\TypeError::class);
+        SolrFacetQuery::fromStringAndCount('foo:(bar)', false);
+    }
+
     public function testExceptionIsThrownIfFacetQueryStringFormatIsInvalid()
     {
         $this->expectException(InvalidFacetQueryFormatException::class);
@@ -23,9 +37,8 @@ class SolrFacetQueryTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @dataProvider facetQueryStringProvider
-     * @param $facetQueryString
      */
-    public function testFacetQueryIsCreated($facetQueryString)
+    public function testFacetQueryIsCreated(string $facetQueryString)
     {
         $this->assertInstanceOf(SolrFacetQuery::class, SolrFacetQuery::fromStringAndCount($facetQueryString, 1));
     }
@@ -33,7 +46,7 @@ class SolrFacetQueryTest extends \PHPUnit_Framework_TestCase
     /**
      * @return array[]
      */
-    public function facetQueryStringProvider()
+    public function facetQueryStringProvider() : array
     {
         return [
             ['foo:(bar)'],

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
@@ -43,7 +45,7 @@ class SolrFacetFilterRequest
     /**
      * @return mixed[]
      */
-    public function toArray()
+    public function toArray() : array
     {
         $fields = $this->facetFiltersToIncludeInResult->getFields();
 
@@ -66,7 +68,7 @@ class SolrFacetFilterRequest
      * @param FacetFilterRequestField[] $fields
      * @return string[]
      */
-    private function getFacetFields(FacetFilterRequestField ...$fields)
+    private function getFacetFields(FacetFilterRequestField ...$fields) : array
     {
         return array_reduce($fields, function (array $carry, FacetFilterRequestField $field) {
             if ($field->isRanged()) {
@@ -80,7 +82,7 @@ class SolrFacetFilterRequest
      * @param FacetFilterRequestField[] $fields
      * @return string[]
      */
-    private function getFacetQueries(FacetFilterRequestField ...$fields)
+    private function getFacetQueries(FacetFilterRequestField ...$fields) : array
     {
         return array_reduce($fields, function (array $carry, FacetFilterRequestField $field) {
             if (!$field->isRanged()) {
@@ -95,7 +97,7 @@ class SolrFacetFilterRequest
      * @param FacetFilterRequestRangedField $field
      * @return string[]
      */
-    private function getRangedFieldRanges(FacetFilterRequestRangedField $field)
+    private function getRangedFieldRanges(FacetFilterRequestRangedField $field) : array
     {
         return array_reduce($field->getRanges(), function (array $carry, FacetFilterRange $range) use ($field) {
             $from = $this->getRangeBoundaryValue($range->from());
@@ -108,7 +110,7 @@ class SolrFacetFilterRequest
      * @param array[] $filterSelection
      * @return string[]
      */
-    private function getSelectedFacetQueries(array $filterSelection)
+    private function getSelectedFacetQueries(array $filterSelection) : array
     {
         return array_reduce(array_keys($filterSelection), function (array $carry, $filterCode) use ($filterSelection) {
             if (count($filterSelection[$filterCode]) > 0) {
@@ -123,11 +125,11 @@ class SolrFacetFilterRequest
      * @param string[] $filterValues
      * @return string
      */
-    private function getFormattedFacetQueryValues($filterCode, array $filterValues)
+    private function getFormattedFacetQueryValues(string $filterCode, array $filterValues) : string
     {
         if ($this->facetFieldTransformationRegistry->hasTransformationForCode($filterCode)) {
             $transformation = $this->facetFieldTransformationRegistry->getTransformationByCode($filterCode);
-            $formattedValues = array_map(function ($filterValue) use ($transformation) {
+            $formattedValues = array_map(function (string $filterValue) use ($transformation) {
                 $facetValue = $transformation->decode($filterValue);
                 
                 if ($facetValue instanceof FacetFilterRange) {
@@ -147,8 +149,8 @@ class SolrFacetFilterRequest
     }
 
     /**
-     * @param string|null $boundary
-     * @return string
+     * @param mixed $boundary
+     * @return mixed
      */
     private function getRangeBoundaryValue($boundary)
     {
@@ -159,11 +161,7 @@ class SolrFacetFilterRequest
         return $boundary;
     }
 
-    /**
-     * @param string $queryString
-     * @return string
-     */
-    private function escapeQueryChars($queryString)
+    private function escapeQueryChars(string $queryString) : string
     {
         $src = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '~', '*', '?', ':', '"', ';', '/'];
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetField;
@@ -53,10 +55,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         $this->client->update([$solrDocument]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function query(SearchCriteria $criteria, QueryOptions $queryOptions)
+    public function query(SearchCriteria $criteria, QueryOptions $queryOptions) : SearchEngineResponse
     {
         $query =  new SolrQuery($criteria, $queryOptions);
 
@@ -82,13 +81,10 @@ class SolrSearchEngine implements SearchEngine, Clearable
         return new SearchEngineResponse($facetFieldsCollection, $totalNumberOfResults, ...$matchingProductIds);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function queryFullText($searchString, QueryOptions $queryOptions)
+    public function queryFullText(string $searchString, QueryOptions $queryOptions) : SearchEngineResponse
     {
         $criteria = CompositeSearchCriterion::createAnd(
-            SearchCriterionLike::create(self::FULL_TEXT_SEARCH_FIELD_NAME, $searchString),
+            new SearchCriterionLike(self::FULL_TEXT_SEARCH_FIELD_NAME, $searchString),
             $this->globalProductListingCriteria
         );
 
@@ -113,7 +109,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         SolrQuery $query,
         array $filterSelection,
         FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
-    ) {
+    ) : FacetFieldCollection {
         $selectedFilterAttributeCodes = array_keys($filterSelection);
         $nonSelectedFacetFields = $response->getNonSelectedFacetFields($selectedFilterAttributeCodes);
         $selectedFacetFields = $this->getSelectedFacetFields($filterSelection, $query, $facetFiltersToIncludeInResult);
@@ -131,7 +127,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         array $filterSelection,
         SolrQuery $query,
         FacetFiltersToIncludeInResult $facetFiltersToIncludeInResult
-    ) {
+    ) : array {
         $selectedAttributeCodes = array_keys($filterSelection);
         $facetFields = [];
 
@@ -150,12 +146,7 @@ class SolrSearchEngine implements SearchEngine, Clearable
         return $facetFields;
     }
 
-    /**
-     * @param SolrQuery $query
-     * @param SolrFacetFilterRequest $facetFilterRequest
-     * @return SolrResponse
-     */
-    private function querySolr(SolrQuery $query, SolrFacetFilterRequest $facetFilterRequest)
+    private function querySolr(SolrQuery $query, SolrFacetFilterRequest $facetFilterRequest) : SolrResponse
     {
         $queryParameters = $query->toArray();
         $facetParameters = $facetFilterRequest->toArray();

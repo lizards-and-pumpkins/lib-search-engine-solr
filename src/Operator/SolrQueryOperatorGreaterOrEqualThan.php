@@ -1,13 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
 class SolrQueryOperatorGreaterOrEqualThan implements SolrQueryOperator
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getFormattedQueryString($fieldName, $fieldValue)
+    public function getFormattedQueryString(string $fieldName, string $fieldValue) : string
     {
         return sprintf('%s:[%s TO *]', $fieldName, $fieldValue);
     }

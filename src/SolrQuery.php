@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
@@ -37,7 +39,7 @@ class SolrQuery
     /**
      * @return mixed[]
      */
-    public function toArray()
+    public function toArray() : array
     {
         if (null === $this->memoizedSolrQueryArrayRepresentation) {
             $this->memoizedSolrQueryArrayRepresentation = $this->getSolrQueryArrayRepresentation();
@@ -49,7 +51,7 @@ class SolrQuery
     /**
      * @return mixed[]
      */
-    private function getSolrQueryArrayRepresentation()
+    private function getSolrQueryArrayRepresentation() : array
     {
         $fieldsQueryString = $this->convertCriteriaIntoSolrQueryString($this->criteria);
         $contextQueryString = $this->convertContextIntoQueryString($this->queryOptions->getContext());
@@ -67,11 +69,7 @@ class SolrQuery
         ];
     }
 
-    /**
-     * @param SearchCriteria $criteria
-     * @return string
-     */
-    private function convertCriteriaIntoSolrQueryString(SearchCriteria $criteria)
+    private function convertCriteriaIntoSolrQueryString(SearchCriteria $criteria) : string
     {
         $criteriaJson = json_encode($criteria);
         $criteriaArray = json_decode($criteriaJson, true);
@@ -83,7 +81,7 @@ class SolrQuery
      * @param mixed[] $criteria
      * @return string
      */
-    private function createSolrQueryStringFromCriteriaArray(array $criteria)
+    private function createSolrQueryStringFromCriteriaArray(array $criteria) : string
     {
         if (isset($criteria['condition'])) {
             $subCriteriaQueries = array_map([$this, 'createSolrQueryStringFromCriteriaArray'], $criteria['criteria']);
@@ -98,7 +96,7 @@ class SolrQuery
      * @param string[] $criteria
      * @return string
      */
-    private function createPrimitiveOperationQueryString(array $criteria)
+    private function createPrimitiveOperationQueryString(array $criteria) : string
     {
         $fieldName = $this->escapeQueryChars($criteria['fieldName']);
         $fieldValue = $this->escapeQueryChars($criteria['fieldValue']);
@@ -107,11 +105,7 @@ class SolrQuery
         return $operator->getFormattedQueryString($fieldName, $fieldValue);
     }
 
-    /**
-     * @param string $operation
-     * @return SolrQueryOperator
-     */
-    private function getSolrOperator($operation)
+    private function getSolrOperator(string $operation) : SolrQueryOperator
     {
         $className = __NAMESPACE__ . '\\Operator\\SolrQueryOperator' . $operation;
 
@@ -124,11 +118,7 @@ class SolrQuery
         return new $className;
     }
 
-    /**
-     * @param Context $context
-     * @return string
-     */
-    private function convertContextIntoQueryString(Context $context)
+    private function convertContextIntoQueryString(Context $context) : string
     {
         return implode(' AND ', array_map(function ($contextCode) use ($context) {
             $fieldName = $this->escapeQueryChars($contextCode);
@@ -138,25 +128,21 @@ class SolrQuery
     }
 
     /**
-     * @param string $queryString
+     * @param mixed $queryString
      * @return string
      */
-    private function escapeQueryChars($queryString)
+    private function escapeQueryChars($queryString) : string
     {
         $src = ['\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '~', '*', '?', ':', '"', ';', '/'];
 
-        $replace = array_map(function ($string) {
+        $replace = array_map(function (string $string) {
             return '\\' . $string;
         }, $src);
 
         return str_replace($src, $replace, $queryString);
     }
 
-    /**
-     * @param SortOrderConfig $sortOrderConfig
-     * @return string
-     */
-    private function getSortOrderString(SortOrderConfig $sortOrderConfig)
+    private function getSortOrderString(SortOrderConfig $sortOrderConfig) : string
     {
         return sprintf(
             '%s%s %s',

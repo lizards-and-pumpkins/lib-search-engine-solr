@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
 abstract class AbstractSolrQueryOperatorTest extends \PHPUnit_Framework_TestCase
@@ -30,15 +32,7 @@ abstract class AbstractSolrQueryOperatorTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($expectedExpression, $result);
     }
 
-    /**
-     * @return SolrQueryOperator
-     */
-    abstract protected function getOperatorInstance();
+    abstract protected function getOperatorInstance() : SolrQueryOperator;
 
-    /**
-     * @param string $fieldName
-     * @param string $fieldValue
-     * @return string
-     */
-    abstract protected function getExpectedExpression($fieldName, $fieldValue);
+    abstract protected function getExpectedExpression(string $fieldName, string $fieldValue) : string;
 }

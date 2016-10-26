@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
@@ -8,6 +10,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderDirection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\CompositeSearchCriterion;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
+use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\ProductSearch\QueryOptions;
 
 /**
@@ -148,8 +151,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $sortAttributeCode = 'baz';
-        $sortDirection = SortOrderDirection::ASC;
+        $sortAttributeCode = AttributeCode::fromString('baz');
+        $sortDirection = SortOrderDirection::create(SortOrderDirection::ASC);
 
         $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
         $stubSortOrderConfig->method('getAttributeCode')->willReturn($sortAttributeCode);
