@@ -51,11 +51,7 @@ class SolrResponse
 
     public function getTotalNumberOfResults() : int
     {
-        if (! isset($this->response['response']['numFound'])) {
-            return 0;
-        }
-
-        return $this->response['response']['numFound'];
+        return $this->response['response']['numFound'] ?? 0;
     }
 
     /**
@@ -112,11 +108,7 @@ class SolrResponse
      */
     private function getFacetFields() : array
     {
-        if (! isset($this->response['facet_counts']['facet_fields'])) {
-            return [];
-        }
-
-        return $this->response['facet_counts']['facet_fields'];
+        return $this->response['facet_counts']['facet_fields'] ?? [];
     }
 
     /**
