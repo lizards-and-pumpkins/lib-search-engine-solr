@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
@@ -21,7 +23,6 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\Import\Product\ProductId;
 use LizardsAndPumpkins\ProductSearch\QueryOptions;
-use PHPUnit_Framework_MockObject_MockObject as MockObject;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
@@ -48,10 +49,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 
     private $testGlobalProductListingCriteriaFieldValue = 'baz';
 
-    /**
-     * @return Context
-     */
-    private function createTestContext()
+    private function createTestContext() : Context
     {
         return SelfContainedContextBuilder::rehydrateContext([
             'website' => 'website',
@@ -64,14 +62,14 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
      * @param string $sortDirection
      * @return SortOrderConfig|\PHPUnit_Framework_MockObject_MockObject
      */
-    private function createStubSortOrderConfig($sortByFieldCode, $sortDirection)
+    private function createStubSortOrderConfig(string $sortByFieldCode, string $sortDirection) : SortOrderConfig
     {
         $stubAttributeCode = $this->createMock(AttributeCode::class);
         $stubAttributeCode->method('__toString')->willReturn($sortByFieldCode);
 
         $sortOrderConfig = $this->createMock(SortOrderConfig::class);
         $sortOrderConfig->method('getAttributeCode')->willReturn($stubAttributeCode);
-        $sortOrderConfig->method('getSelectedDirection')->willReturn($sortDirection);
+        $sortOrderConfig->method('getSelectedDirection')->willReturn(SortOrderDirection::create($sortDirection));
 
         return $sortOrderConfig;
     }
@@ -80,7 +78,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
      * @param array[] $filterSelection
      * @return QueryOptions|\PHPUnit_Framework_MockObject_MockObject
      */
-    private function createStubQueryOptions(array $filterSelection)
+    private function createStubQueryOptions(array $filterSelection) : QueryOptions
     {
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
         $stubSortOrderConfig = $this->createStubSortOrderConfig('foo', SortOrderDirection::ASC);
@@ -100,10 +98,9 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
     {
         $this->mockHttpClient = $this->createMock(SolrHttpClient::class);
 
-        /** @var FacetFieldTransformationRegistry|MockObject $stubTransformationRegistry */
         $stubTransformationRegistry = $this->createMock(FacetFieldTransformationRegistry::class);
 
-        $testGlobalProductListingCriteria = SearchCriterionEqual::create(
+        $testGlobalProductListingCriteria = new SearchCriterionEqual(
             $this->testGlobalProductListingCriteriaFieldName,
             $this->testGlobalProductListingCriteriaFieldValue
         );
@@ -118,8 +115,8 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
     public function testUpdateRequestContainingSolrDocumentsIsSentToHttpClient()
     {
         $searchDocumentFieldCollection = SearchDocumentFieldCollection::fromArray(['foo' => 'bar']);
-        $context = SelfContainedContext::fromArray(['baz' => 'qux']);
-        $productId = ProductId::fromString(uniqid());
+        $context = new SelfContainedContext(['baz' => 'qux']);
+        $productId = new ProductId(uniqid());
 
         $searchDocument = new SearchDocument($searchDocumentFieldCollection, $context, $productId);
         $expectedSolrDocument = SolrDocumentBuilder::fromSearchDocument($searchDocument);
@@ -138,7 +135,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
     {
         $this->mockHttpClient->method('select')->willReturn([]);
 
-        $searchCriteria = SearchCriterionEqual::create('foo', 'bar');
+        $searchCriteria = new SearchCriterionEqual('foo', 'bar');
         $filterSelection = [];
 
         $result = $this->searchEngine->query($searchCriteria, $this->createStubQueryOptions($filterSelection));
@@ -158,7 +155,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
             ]
         ]);
 
-        $searchCriteria = SearchCriterionAnything::create();
+        $searchCriteria = new SearchCriterionAnything();
         $filterSelection = [$attributeCode => [$attributeValue]];
 
         $response = $this->searchEngine->query($searchCriteria, $this->createStubQueryOptions($filterSelection));
@@ -166,7 +163,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         $expectedFacetFieldCollection = new FacetFieldCollection(
             new FacetField(
                 AttributeCode::fromString($attributeCode),
-                FacetFieldValue::create($attributeValue, $attributeValueCount)
+                new FacetFieldValue($attributeValue, $attributeValueCount)
             )
         );
 

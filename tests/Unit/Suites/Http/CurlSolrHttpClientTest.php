@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\Exception\SolrConnectionException;
@@ -29,10 +31,7 @@ class CurlSolrHttpClientTest extends \PHPUnit_Framework_TestCase
      */
     private static $returnType = 'json';
 
-    /**
-     * @param string $url
-     */
-    public static function trackRequestUrl($url)
+    public static function trackRequestUrl(string $url)
     {
         self::$requestUrl = $url;
     }
@@ -41,15 +40,12 @@ class CurlSolrHttpClientTest extends \PHPUnit_Framework_TestCase
      * @param int $option
      * @param mixed $value
      */
-    public static function trackCurlOptionSet($option, $value)
+    public static function trackCurlOptionSet(int $option, $value)
     {
         self::$curlOptionsSet[$option] = $value;
     }
 
-    /**
-     * @return string
-     */
-    public static function getReturnType()
+    public static function getReturnType() : string
     {
         return self::$returnType;
     }
@@ -174,7 +170,7 @@ class CurlSolrHttpClientTest extends \PHPUnit_Framework_TestCase
  * @param string $url
  * @return resource
  */
-function curl_init($url)
+function curl_init(string $url)
 {
     CurlSolrHttpClientTest::trackRequestUrl($url);
     return \curl_init($url);
@@ -185,7 +181,7 @@ function curl_init($url)
  * @param int $option
  * @param mixed $value
  */
-function curl_setopt($handle, $option, $value)
+function curl_setopt($handle, int $option, $value)
 {
     CurlSolrHttpClientTest::trackCurlOptionSet($option, $value);
 }
@@ -194,7 +190,7 @@ function curl_setopt($handle, $option, $value)
  * @param resource $handle
  * @return string
  */
-function curl_exec($handle)
+function curl_exec($handle) : string
 {
     if (CurlSolrHttpClientTest::getReturnType() === 'html') {
         return '<html><title>Error 404 Not Found</title><body></body></html>';

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\Exception\SolrConnectionException;
@@ -11,16 +13,14 @@ class CurlSolrHttpClient implements SolrHttpClient
      */
     private $solrConnectionPath;
 
-    /**
-     * @param string $solrConnectionPath
-     */
-    public function __construct($solrConnectionPath)
+    public function __construct(string $solrConnectionPath)
     {
         $this->solrConnectionPath = $solrConnectionPath;
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed[] $parameters
+     * @return mixed
      */
     public function update(array $parameters)
     {
@@ -35,7 +35,8 @@ class CurlSolrHttpClient implements SolrHttpClient
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed[] $parameters
+     * @return mixed
      */
     public function select(array $parameters)
     {
@@ -52,7 +53,7 @@ class CurlSolrHttpClient implements SolrHttpClient
      * @param string[] $requestParameters
      * @return string
      */
-    private function constructUrl($servlet, array $requestParameters)
+    private function constructUrl(string $servlet, array $requestParameters) : string
     {
         $defaultParameters = ['wt' => 'json'];
         $parameters = array_merge($defaultParameters, $requestParameters);
@@ -63,11 +64,7 @@ class CurlSolrHttpClient implements SolrHttpClient
         return $this->solrConnectionPath . $servlet . '?' . $arraySafeQueryString;
     }
 
-    /**
-     * @param string $queryString
-     * @return string
-     */
-    private function replaceSolrArrayWithPlainField($queryString)
+    private function replaceSolrArrayWithPlainField(string $queryString) : string
     {
         return preg_replace('/%5B(?:[0-9]|[1-9][0-9]+)%5D=/', '=', $queryString);
     }
@@ -76,7 +73,7 @@ class CurlSolrHttpClient implements SolrHttpClient
      * @param string $url
      * @return resource
      */
-    private function createCurlHandle($url)
+    private function createCurlHandle(string $url)
     {
         $curlHandle = curl_init($url);
 
@@ -99,10 +96,7 @@ class CurlSolrHttpClient implements SolrHttpClient
         return $response;
     }
 
-    /**
-     * @param string $rawResponse
-     */
-    private function validateResponseType($rawResponse)
+    private function validateResponseType(string $rawResponse)
     {
         if (json_last_error() !== JSON_ERROR_NONE) {
             $errorMessage = preg_replace('/.*<title>|<\/title>.*/ism', '', $rawResponse);

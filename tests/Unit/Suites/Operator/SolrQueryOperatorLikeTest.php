@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
 /**
@@ -7,18 +9,12 @@ namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
  */
 class SolrQueryOperatorLikeTest extends AbstractSolrQueryOperatorTest
 {
-    /**
-     * {@inheritdoc}
-     */
-    final protected function getOperatorInstance()
+    final protected function getOperatorInstance() : SolrQueryOperator
     {
         return new SolrQueryOperatorLike;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    final protected function getExpectedExpression($fieldName, $fieldValue)
+    final protected function getExpectedExpression(string $fieldName, string $fieldValue) : string
     {
         $values = explode(' ', $fieldValue);
         $queries = array_map(function ($value) use ($fieldName) {

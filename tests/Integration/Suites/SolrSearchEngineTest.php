@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LizardsAndPumpkins;
 
 use LizardsAndPumpkins\Context\Context;
@@ -23,10 +25,7 @@ use LizardsAndPumpkins\Util\Storage\Clearable;
 
 class SolrSearchEngineTest extends AbstractSearchEngineTest
 {
-    /**
-     * @return Context
-     */
-    private function createTestContext()
+    private function createTestContext() : Context
     {
         return SelfContainedContextBuilder::rehydrateContext([
             'website' => 'website',
@@ -34,12 +33,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         ]);
     }
 
-    /**
-     * @param string $sortByFieldCode
-     * @param string $sortDirection
-     * @return SortOrderConfig
-     */
-    private function createTestSortOrderConfig($sortByFieldCode, $sortDirection)
+    private function createTestSortOrderConfig(string $sortByFieldCode, string $sortDirection) : SortOrderConfig
     {
         return SortOrderConfig::createSelected(
             AttributeCode::fromString($sortByFieldCode),
@@ -47,11 +41,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         );
     }
 
-    /**
-     * @param SortOrderConfig $sortOrderConfig
-     * @return QueryOptions
-     */
-    private function createTestQueryOptions(SortOrderConfig $sortOrderConfig)
+    private function createTestQueryOptions(SortOrderConfig $sortOrderConfig) : QueryOptions
     {
         $filterSelection = [];
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
@@ -80,13 +70,13 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
      */
     final protected function createSearchEngineInstance(
         FacetFieldTransformationRegistry $facetFieldTransformationRegistry
-    ) {
+    ) : SearchEngine {
         $config = EnvironmentConfigReader::fromGlobalState();
         $testSolrConnectionPath = $config->get('solr_integration_test_connection_path');
 
         $client = new CurlSolrHttpClient($testSolrConnectionPath);
 
-        $globalProductListingCriteria = SearchCriterionAnything::create();
+        $globalProductListingCriteria = new SearchCriterionAnything();
 
         return new SolrSearchEngine($client, $globalProductListingCriteria, $facetFieldTransformationRegistry);
     }
@@ -99,7 +89,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
         $searchEngine = $this->createSearchEngineInstance($facetFieldTransformationRegistry);
 
-        $searchCriteria = SearchCriterionEqual::create($nonExistingFieldCode, $fieldValue);
+        $searchCriteria = new SearchCriterionEqual($nonExistingFieldCode, $fieldValue);
         $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortOrderDirection::ASC);
 
         $this->expectException(SolrException::class);
@@ -118,14 +108,14 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
-        $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
+        $searchCriteria = new SearchCriterionEqual($fieldCode, $fieldValue);
 
         $searchEngine = new SolrSearchEngine($client, $searchCriteria, $facetFieldTransformationRegistry);
 
         $this->expectException(SolrConnectionException::class);
         $this->expectExceptionMessage('Error 404 Not Found');
 
-        $searchCriteria = SearchCriterionEqual::create($fieldCode, $fieldValue);
+        $searchCriteria = new SearchCriterionEqual($fieldCode, $fieldValue);
         $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortOrderDirection::ASC);
 
         $searchEngine->query($searchCriteria, $this->createTestQueryOptions($sortOrderConfig));
