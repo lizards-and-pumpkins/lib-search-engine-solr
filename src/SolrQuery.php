@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortBy;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperator;
@@ -59,7 +59,7 @@ class SolrQuery
         $queryString = sprintf('(%s) AND %s', $fieldsQueryString, $contextQueryString);
         $rowsPerPage = $this->queryOptions->getRowsPerPage();
         $offset = $this->queryOptions->getPageNumber() * $rowsPerPage;
-        $sortOrderString = $this->getSortOrderString($this->queryOptions->getSortOrderConfig());
+        $sortOrderString = $this->getSortOrderString($this->queryOptions->getSortBy());
 
         return [
             'q' => $queryString,
@@ -142,7 +142,7 @@ class SolrQuery
         return str_replace($src, $replace, $queryString);
     }
 
-    private function getSortOrderString(SortOrderConfig $sortOrderConfig) : string
+    private function getSortOrderString(SortBy $sortOrderConfig) : string
     {
         return sprintf(
             '%s%s %s',
