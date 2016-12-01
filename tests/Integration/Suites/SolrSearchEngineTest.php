@@ -9,8 +9,8 @@ use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
 use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderDirection;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortBy;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortDirection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
@@ -33,15 +33,12 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         ]);
     }
 
-    private function createTestSortOrderConfig(string $sortByFieldCode, string $sortDirection) : SortOrderConfig
+    private function createTestSortOrderConfig(string $sortByFieldCode, string $sortDirection) : SortBy
     {
-        return SortOrderConfig::createSelected(
-            AttributeCode::fromString($sortByFieldCode),
-            SortOrderDirection::create($sortDirection)
-        );
+        return new SortBy(AttributeCode::fromString($sortByFieldCode), SortDirection::create($sortDirection));
     }
 
-    private function createTestQueryOptions(SortOrderConfig $sortOrderConfig) : QueryOptions
+    private function createTestQueryOptions(SortBy $sortOrderConfig) : QueryOptions
     {
         $filterSelection = [];
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
@@ -90,7 +87,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchEngine = $this->createSearchEngineInstance($facetFieldTransformationRegistry);
 
         $searchCriteria = new SearchCriterionEqual($nonExistingFieldCode, $fieldValue);
-        $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortOrderDirection::ASC);
+        $sortOrderConfig = $this->createTestSortOrderConfig($nonExistingFieldCode, SortDirection::ASC);
 
         $this->expectException(SolrException::class);
         $this->expectExceptionMessage(sprintf('undefined field %s', $nonExistingFieldCode));
@@ -116,7 +113,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $this->expectExceptionMessage('Error 404 Not Found');
 
         $searchCriteria = new SearchCriterionEqual($fieldCode, $fieldValue);
-        $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortOrderDirection::ASC);
+        $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortDirection::ASC);
 
         $searchEngine->query($searchCriteria, $this->createTestQueryOptions($sortOrderConfig));
     }

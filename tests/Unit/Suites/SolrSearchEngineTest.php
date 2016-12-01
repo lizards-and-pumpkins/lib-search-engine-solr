@@ -12,8 +12,8 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldCollection;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderDirection;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortBy;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortDirection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
@@ -60,16 +60,16 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
     /**
      * @param string $sortByFieldCode
      * @param string $sortDirection
-     * @return SortOrderConfig|\PHPUnit_Framework_MockObject_MockObject
+     * @return SortBy|\PHPUnit_Framework_MockObject_MockObject
      */
-    private function createStubSortOrderConfig(string $sortByFieldCode, string $sortDirection) : SortOrderConfig
+    private function createStubSortOrderConfig(string $sortByFieldCode, string $sortDirection) : SortBy
     {
         $stubAttributeCode = $this->createMock(AttributeCode::class);
         $stubAttributeCode->method('__toString')->willReturn($sortByFieldCode);
 
-        $sortOrderConfig = $this->createMock(SortOrderConfig::class);
+        $sortOrderConfig = $this->createMock(SortBy::class);
         $sortOrderConfig->method('getAttributeCode')->willReturn($stubAttributeCode);
-        $sortOrderConfig->method('getSelectedDirection')->willReturn(SortOrderDirection::create($sortDirection));
+        $sortOrderConfig->method('getSelectedDirection')->willReturn(SortDirection::create($sortDirection));
 
         return $sortOrderConfig;
     }
@@ -81,7 +81,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
     private function createStubQueryOptions(array $filterSelection) : QueryOptions
     {
         $facetFiltersToIncludeInResult = new FacetFiltersToIncludeInResult();
-        $stubSortOrderConfig = $this->createStubSortOrderConfig('foo', SortOrderDirection::ASC);
+        $stubSortOrderConfig = $this->createStubSortOrderConfig('foo', SortDirection::ASC);
 
         $stubQueryOptions = $this->createMock(QueryOptions::class);
         $stubQueryOptions->method('getFilterSelection')->willReturn($filterSelection);
@@ -89,7 +89,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         $stubQueryOptions->method('getFacetFiltersToIncludeInResult')->willReturn($facetFiltersToIncludeInResult);
         $stubQueryOptions->method('getRowsPerPage')->willReturn(100);
         $stubQueryOptions->method('getPageNumber')->willReturn(0);
-        $stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         return $stubQueryOptions;
     }

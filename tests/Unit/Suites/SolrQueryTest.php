@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr;
 
 use LizardsAndPumpkins\Context\Context;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderConfig;
-use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortOrderDirection;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortBy;
+use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortDirection;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\CompositeSearchCriterion;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriteria;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\UnsupportedSearchCriteriaOperationException;
@@ -78,8 +78,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext->method('getValue')->willReturnMap([['qux', 2]]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
-        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $stubSortOrderConfig = $this->createMock(SortBy::class);
+        $this->stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         $result = $this->solrQuery->toArray();
         $expectedQueryString = '((foo:"bar" OR baz:[1 TO *])) AND ((-qux:[* TO *] AND *:*) OR qux:"2")';
@@ -100,8 +100,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
-        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $stubSortOrderConfig = $this->createMock(SortBy::class);
+        $this->stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         $rowsPerPage = 10;
         $this->stubQueryOptions->method('getRowsPerPage')->willReturn($rowsPerPage);
@@ -124,8 +124,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
-        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $stubSortOrderConfig = $this->createMock(SortBy::class);
+        $this->stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         $rowsPerPage = 10;
         $this->stubQueryOptions->method('getRowsPerPage')->willReturn($rowsPerPage);
@@ -152,12 +152,12 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
         $sortAttributeCode = AttributeCode::fromString('baz');
-        $sortDirection = SortOrderDirection::create(SortOrderDirection::ASC);
+        $sortDirection = SortDirection::create(SortDirection::ASC);
 
-        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
+        $stubSortOrderConfig = $this->createMock(SortBy::class);
         $stubSortOrderConfig->method('getAttributeCode')->willReturn($sortAttributeCode);
         $stubSortOrderConfig->method('getSelectedDirection')->willReturn($sortDirection);
-        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $this->stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         $result = $this->solrQuery->toArray();
         $expectedSortOrderString = sprintf('%s%s %s', $sortAttributeCode, SolrQuery::SORTING_SUFFIX, $sortDirection);
@@ -189,8 +189,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext->method('getValue')->willReturnMap([['qu+x', 2]]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
-        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $stubSortOrderConfig = $this->createMock(SortBy::class);
+        $this->stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         $result = $this->solrQuery->toArray();
         $expectedQueryString = '((fo\/o:"ba\\\\r" OR baz:"\[\]")) AND ((-qu\+x:[* TO *] AND *:*) OR qu\+x:"2")';
@@ -210,8 +210,8 @@ class SolrQueryTest extends \PHPUnit_Framework_TestCase
         $stubContext->method('getSupportedCodes')->willReturn([]);
         $this->stubQueryOptions->method('getContext')->willReturn($stubContext);
 
-        $stubSortOrderConfig = $this->createMock(SortOrderConfig::class);
-        $this->stubQueryOptions->method('getSortOrderConfig')->willReturn($stubSortOrderConfig);
+        $stubSortOrderConfig = $this->createMock(SortBy::class);
+        $this->stubQueryOptions->method('getSortBy')->willReturn($stubSortOrderConfig);
 
         $resultA = $this->solrQuery->toArray();
         $resultB = $this->solrQuery->toArray();
