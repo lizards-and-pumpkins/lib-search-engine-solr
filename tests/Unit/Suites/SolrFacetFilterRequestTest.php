@@ -217,8 +217,8 @@ class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
             $testNormalAttributeCode => ['Does not matter either.'],
         ];
 
-        $rangeFrom = 'baz';
-        $rangeTo = 'qux';
+        $rangeFrom = 0;
+        $rangeTo = 200;
         $stubFacetFilterRange = $this->createMock(FacetFilterRange::class);
         $stubFacetFilterRange->method('from')->willReturn($rangeFrom);
         $stubFacetFilterRange->method('to')->willReturn($rangeTo);
