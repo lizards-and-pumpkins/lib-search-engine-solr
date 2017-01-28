@@ -6,12 +6,11 @@ namespace LizardsAndPumpkins;
 
 use LizardsAndPumpkins\Context\Context;
 use LizardsAndPumpkins\Context\SelfContainedContextBuilder;
-use LizardsAndPumpkins\DataPool\SearchEngine\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetFieldTransformationRegistry;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
+use LizardsAndPumpkins\DataPool\SearchEngine\IntegrationTest\AbstractSearchEngineTest;
 use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortBy;
 use LizardsAndPumpkins\DataPool\SearchEngine\Query\SortDirection;
-use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionAnything;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchCriteria\SearchCriterionEqual;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchEngine;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
@@ -73,9 +72,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $client = new CurlSolrHttpClient($testSolrConnectionPath);
 
-        $globalProductListingCriteria = new SearchCriterionAnything();
-
-        return new SolrSearchEngine($client, $globalProductListingCriteria, $facetFieldTransformationRegistry);
+        return new SolrSearchEngine($client, $facetFieldTransformationRegistry);
     }
 
     public function testExceptionIsThrownIfSolrQueryIsInvalid()
@@ -105,9 +102,7 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
 
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
-        $searchCriteria = new SearchCriterionEqual($fieldCode, $fieldValue);
-
-        $searchEngine = new SolrSearchEngine($client, $searchCriteria, $facetFieldTransformationRegistry);
+        $searchEngine = new SolrSearchEngine($client, $facetFieldTransformationRegistry);
 
         $this->expectException(SolrConnectionException::class);
         $this->expectExceptionMessage('Error 404 Not Found');

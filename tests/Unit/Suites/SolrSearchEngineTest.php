@@ -28,8 +28,6 @@ use LizardsAndPumpkins\ProductSearch\QueryOptions;
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrDocumentBuilder
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrFacetFilterRequest
- * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorAnything
- * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator\SolrQueryOperatorEqual
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrQuery
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrResponse
  */
@@ -44,10 +42,6 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
      * @var SolrHttpClient|\PHPUnit_Framework_MockObject_MockObject
      */
     private $mockHttpClient;
-
-    private $testGlobalProductListingCriteriaFieldName = 'bar';
-
-    private $testGlobalProductListingCriteriaFieldValue = 'baz';
 
     private function createTestContext() : Context
     {
@@ -100,16 +94,7 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
 
         $stubTransformationRegistry = $this->createMock(FacetFieldTransformationRegistry::class);
 
-        $testGlobalProductListingCriteria = new SearchCriterionEqual(
-            $this->testGlobalProductListingCriteriaFieldName,
-            $this->testGlobalProductListingCriteriaFieldValue
-        );
-
-        $this->searchEngine = new SolrSearchEngine(
-            $this->mockHttpClient,
-            $testGlobalProductListingCriteria,
-            $stubTransformationRegistry
-        );
+        $this->searchEngine = new SolrSearchEngine($this->mockHttpClient, $stubTransformationRegistry);
     }
 
     public function testUpdateRequestContainingSolrDocumentsIsSentToHttpClient()
@@ -168,27 +153,5 @@ class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals($expectedFacetFieldCollection, $response->getFacetFieldCollection());
-    }
-
-    public function testSolrQuerySentToHttpClientContainsGlobalProductListingCriteria()
-    {
-        $searchString = 'foo';
-        $filterSelection = [];
-
-        $spy = $this->once();
-        $this->mockHttpClient->expects($spy)->method('select')->willReturn([]);
-
-        $this->searchEngine->queryFullText($searchString, $this->createStubQueryOptions($filterSelection));
-
-        $queryString = $spy->getInvocations()[0]->parameters[0]['q'];
-
-        $expectationRegExp = sprintf(
-            '/^\(\(\(full_text_search:"%s"\) AND %s:"%s"\)\)/',
-            $searchString,
-            $this->testGlobalProductListingCriteriaFieldName,
-            $this->testGlobalProductListingCriteriaFieldValue
-        );
-
-        $this->assertRegExp($expectationRegExp, $queryString);
     }
 }
