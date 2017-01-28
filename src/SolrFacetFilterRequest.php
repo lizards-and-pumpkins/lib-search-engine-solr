@@ -133,8 +133,8 @@ class SolrFacetFilterRequest
                 $facetValue = $transformation->decode($filterValue);
                 
                 if ($facetValue instanceof FacetFilterRange) {
-                    $from = $this->escapeQueryChars($facetValue->from());
-                    $to = $this->escapeQueryChars($facetValue->to());
+                    $from = $this->escapeQueryChars((string) $facetValue->from());
+                    $to = $this->escapeQueryChars((string) $facetValue->to());
 
                     return sprintf('[%s TO %s]', $from, $to);
                 }
