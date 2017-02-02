@@ -64,7 +64,7 @@ class SolrFacetFilterRequest
         return [
             'facet' => 'on',
             'facet.mincount' => 1,
-            'facet.limit' => - 1,
+            'facet.limit' => -1,
             'facet.sort' => 'index',
             'facet.field' => $this->getFacetFields(...$fields),
             'facet.query' => $this->getFacetQueries(...$fields),
