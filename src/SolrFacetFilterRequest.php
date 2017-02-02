@@ -47,13 +47,13 @@ class SolrFacetFilterRequest
      */
     public function toArray() : array
     {
-        return array_merge($this->getFacetsArray(), $this->getFacetQueriesArray());
+        return array_merge($this->getFacetsRequestParameters(), $this->getFacetQueriesRequestParameter());
     }
 
     /**
      * @return mixed[]
      */
-    private function getFacetsArray(): array
+    private function getFacetsRequestParameters(): array
     {
         $fields = $this->facetFiltersToIncludeInResult->getFields();
 
@@ -74,7 +74,7 @@ class SolrFacetFilterRequest
     /**
      * @return array[]
      */
-    private function getFacetQueriesArray(): array
+    private function getFacetQueriesRequestParameter(): array
     {
         if (count($this->filterSelection) === 0) {
             return [];
