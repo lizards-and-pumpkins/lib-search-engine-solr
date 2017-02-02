@@ -47,6 +47,14 @@ class SolrFacetFilterRequest
      */
     public function toArray() : array
     {
+        return array_merge($this->getFacetsRequestParameters(), $this->getFacetQueriesRequestParameter());
+    }
+
+    /**
+     * @return mixed[]
+     */
+    private function getFacetsRequestParameters(): array
+    {
         $fields = $this->facetFiltersToIncludeInResult->getFields();
 
         if (count($fields) === 0) {
@@ -60,8 +68,19 @@ class SolrFacetFilterRequest
             'facet.sort' => 'index',
             'facet.field' => $this->getFacetFields(...$fields),
             'facet.query' => $this->getFacetQueries(...$fields),
-            'fq' => $this->getSelectedFacetQueries($this->filterSelection),
         ];
+    }
+
+    /**
+     * @return array[]
+     */
+    private function getFacetQueriesRequestParameter(): array
+    {
+        if (count($this->filterSelection) === 0) {
+            return [];
+        }
+
+        return ['fq' => $this->getSelectedFacetQueries($this->filterSelection)];
     }
 
     /**
