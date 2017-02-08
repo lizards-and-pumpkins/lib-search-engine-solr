@@ -8,11 +8,12 @@ use LizardsAndPumpkins\Context\SelfContainedContext;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocument;
 use LizardsAndPumpkins\DataPool\SearchEngine\SearchDocument\SearchDocumentFieldCollection;
 use LizardsAndPumpkins\Import\Product\ProductId;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrDocumentBuilder
  */
-class SolrDocumentBuilderTest extends \PHPUnit_Framework_TestCase
+class SolrDocumentBuilderTest extends TestCase
 {
     public function testSearchDocumentIsConvertedIntoSolrFormat()
     {

@@ -10,11 +10,12 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldTransformation\FacetField
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRange;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\InvalidFacetQueryFormatException;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrFacetQuery
  */
-class SolrFacetQueryTest extends \PHPUnit_Framework_TestCase
+class SolrFacetQueryTest extends TestCase
 {
     public function testExceptionIsThrownIfFacetQueryStringIsNotAString()
     {

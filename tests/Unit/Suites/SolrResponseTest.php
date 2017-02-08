@@ -11,11 +11,12 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFieldValue;
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Exception\SolrException;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\Import\Product\ProductId;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrResponse
  */
-class SolrResponseTest extends \PHPUnit_Framework_TestCase
+class SolrResponseTest extends TestCase
 {
     /**
      * @var FacetFieldTransformationRegistry|\PHPUnit_Framework_MockObject_MockObject

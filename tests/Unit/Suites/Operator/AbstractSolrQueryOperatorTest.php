@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Operator;
 
-abstract class AbstractSolrQueryOperatorTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+abstract class AbstractSolrQueryOperatorTest extends TestCase
 {
     /**
      * @var SolrQueryOperator
