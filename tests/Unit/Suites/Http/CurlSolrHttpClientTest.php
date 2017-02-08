@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http;
 
 use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\Exception\SolrConnectionException;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\CurlSolrHttpClient
  */
-class CurlSolrHttpClientTest extends \PHPUnit_Framework_TestCase
+class CurlSolrHttpClientTest extends TestCase
 {
     /**
      * @var CurlSolrHttpClient

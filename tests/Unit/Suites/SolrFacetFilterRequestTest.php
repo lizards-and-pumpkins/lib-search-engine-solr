@@ -11,11 +11,12 @@ use LizardsAndPumpkins\DataPool\SearchEngine\FacetFiltersToIncludeInResult;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestField;
 use LizardsAndPumpkins\DataPool\SearchEngine\FacetFilterRequestRangedField;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrFacetFilterRequest
  */
-class SolrFacetFilterRequestTest extends \PHPUnit_Framework_TestCase
+class SolrFacetFilterRequestTest extends TestCase
 {
     /**
      * @var FacetFiltersToIncludeInResult|\PHPUnit_Framework_MockObject_MockObject

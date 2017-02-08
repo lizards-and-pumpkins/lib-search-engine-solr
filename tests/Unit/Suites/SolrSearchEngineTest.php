@@ -23,6 +23,7 @@ use LizardsAndPumpkins\DataPool\SearchEngine\Solr\Http\SolrHttpClient;
 use LizardsAndPumpkins\Import\Product\AttributeCode;
 use LizardsAndPumpkins\Import\Product\ProductId;
 use LizardsAndPumpkins\ProductSearch\QueryOptions;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrSearchEngine
@@ -31,7 +32,7 @@ use LizardsAndPumpkins\ProductSearch\QueryOptions;
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrQuery
  * @uses   \LizardsAndPumpkins\DataPool\SearchEngine\Solr\SolrResponse
  */
-class SolrSearchEngineTest extends \PHPUnit_Framework_TestCase
+class SolrSearchEngineTest extends TestCase
 {
     /**
      * @var SolrSearchEngine
