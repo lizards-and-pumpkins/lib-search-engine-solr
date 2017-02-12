@@ -11,7 +11,7 @@
     "require": {
         "php": "~7.0.0",
         "ext-curl": "*",
-        "lizards-and-pumpkins/catalog": "~0.16.0"
+        "lizards-and-pumpkins/catalog": "~0.17.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~5.7",
