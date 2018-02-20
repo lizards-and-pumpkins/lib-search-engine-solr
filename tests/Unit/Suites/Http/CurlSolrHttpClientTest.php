@@ -113,6 +113,16 @@ class CurlSolrHttpClientTest extends TestCase
         $this->client->update($parameters);
     }
 
+    public function testExceptionIsThrownIfSolrIsNotRunning()
+    {
+        self::$returnType = 'bool';
+
+        $this->expectException(SolrConnectionException::class);
+
+        $parameters = [];
+        $this->client->update($parameters);
+    }
+
     public function testSuccessfulUpdateRequestReturnsAnArray()
     {
         $parameters = [];
@@ -189,12 +199,16 @@ function curl_setopt($handle, int $option, $value)
 
 /**
  * @param resource $handle
- * @return string
+ * @return string|boolean
  */
-function curl_exec($handle) : string
+function curl_exec($handle)
 {
     if (CurlSolrHttpClientTest::getReturnType() === 'html') {
         return '<html><title>Error 404 Not Found</title><body></body></html>';
+    }
+
+    if (CurlSolrHttpClientTest::getReturnType() === 'bool') {
+        return false;
     }
 
     return json_encode([]);

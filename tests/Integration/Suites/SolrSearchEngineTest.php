@@ -92,24 +92,36 @@ class SolrSearchEngineTest extends AbstractSearchEngineTest
         $searchEngine->query($searchCriteria, $this->createTestQueryOptions($sortOrderConfig));
     }
 
-    public function testExceptionIsThrownIfSolrIsNotAccessible()
+    /**
+     * @dataProvider invalidConnectionPathProvider
+     */
+    public function testExceptionIsThrownIfSolrIsNotAccessible(string $invalidSolrConnectionPath)
     {
         $fieldCode = 'foo';
         $fieldValue = 'bar';
 
-        $testSolrConnectionPath = 'http://localhost:8983/solr/nonexistingcore/';
-        $client = new CurlSolrHttpClient($testSolrConnectionPath);
+        $client = new CurlSolrHttpClient($invalidSolrConnectionPath);
 
         $facetFieldTransformationRegistry = new FacetFieldTransformationRegistry();
 
         $searchEngine = new SolrSearchEngine($client, $facetFieldTransformationRegistry);
 
         $this->expectException(SolrConnectionException::class);
-        $this->expectExceptionMessage('Error 404 Not Found');
 
         $searchCriteria = new SearchCriterionEqual($fieldCode, $fieldValue);
         $sortOrderConfig = $this->createTestSortOrderConfig($fieldCode, SortDirection::ASC);
 
         $searchEngine->query($searchCriteria, $this->createTestQueryOptions($sortOrderConfig));
+    }
+
+    public function invalidConnectionPathProvider(): array
+    {
+        $config = EnvironmentConfigReader::fromGlobalState();
+        $testSolrConnectionPath = $config->get('solr_integration_test_connection_path');
+
+        return [
+            'non-existing-core' => [preg_replace('#[^/]+/$#', 'nonexistingcore/', $testSolrConnectionPath)],
+            'invalid-port' => [preg_replace('/:[0-9]+/', ':1', $testSolrConnectionPath)],
+        ];
     }
 }
