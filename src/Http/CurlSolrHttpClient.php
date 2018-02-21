@@ -90,6 +90,11 @@ class CurlSolrHttpClient implements SolrHttpClient
     private function executeCurlRequest($curlHandle)
     {
         $responseJson = curl_exec($curlHandle);
+
+        if (false === $responseJson) {
+            throw new SolrConnectionException(curl_error($curlHandle));
+        }
+
         $response = json_decode($responseJson, true);
         $this->validateResponseType($responseJson);
 
